@@ -4,6 +4,13 @@
  * work well for content-centric websites.
  */
 
+ img {
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+  margin-bottom: 20px;
+  
+ }
+
+
 /* You can override the default Infima variables here. */
 :root {
   --ifm-color-primary: #4f46e5;
