@@ -1,0 +1,67 @@
+---
+sidebar_position: 2
+title: Hosting on Azure
+slug: azure
+description: Deploy Fider on Azure
+---
+import CloudIstance from './_markdown-cloud-instance.mdx'
+
+<CloudIstance />
+
+### Prerequisites
+
+##### An [Azure](https://azure.microsoft.com/en-us/) subscription
+
+It's free to start, but will require a variable monthly payment afterwards.
+
+##### E-mail Sender
+
+You can choose between a **SMTP Server** or a **[Mailgun](https://www.mailgun.com)** account.
+
+### Deploying your instance
+
+##### Step 1: Create a new PostgreSQL Database
+
+Using Azure portal, crease a new instance of `Azure Database for PostgreSQL servers` using the [Official Guide](https://docs.microsoft.com/en-us/azure/postgresql/quickstart-create-server-database-portal).
+
+![Creating a new PostgreSQL Server](./assets/azure-postgres-create.png)
+
+The guide above also explains how to configure Firewall and create a Database using psql. Follow that process and create a database named `fider`.
+
+```
+CREATE DATABASE fider;
+```
+
+Alternatively, you can also install PostgreSQL on a Virtual Machine.
+
+##### Step 2: Create an Azure App Service
+
+**Azure App Service** (also known as Azure Web App) is where the actual application will be hosted. Using Azure portal again, search for Azure App Service and create a new instance.
+
+We recommend using Linux and Basic B1 at a minimum, but if you're expecting higher traffic, upgrade to a more suitable tier.
+
+![Creating an Azure App Service](./assets/azure-app-site1.png)
+![Docker Settings](./assets/azure-app-site2.png)
+
+##### Step 3: Configure your App
+
+Select **Configuration** on your App Service blade and add the following Application Settings:
+
+- `DATABASE_URL`: {`postgresql://{POSTGRES_SERVER}.postgres.database.azure.com:5432/fider?user={DB_USERNAME}@{POSTGRES_SERVER}&password={DB_PASSWORD}&sslmode=require`}
+- `BASE_URL`: https://yourapplicationame.azurewebsites.net
+- `JWT_SECRET`: It's a secret key used for authentication tokens, you can generate a good secret using an online tool like [this one](https://www.allkeysgenerator.com/Random/Security-Encryption-Key-Generator.aspx) (take at least 512-bit for security).
+- `EMAIL_NOREPLY`: Set this variable to a no-reply address associated to your instance.
+- `EMAIL_MAILGUN_API`: Your Mailgun API key.
+- `EMAIL_MAILGUN_DOMAIN`: Set this variable to your Mailgun domain.
+
+![Application Settings](./assets/azure-app-settings.png)
+
+**If you're using plain SMTP to send emails**, you need to replace `MAILGUN_*` variables by the equivalent SMTP variables: `EMAIL_SMTP_HOST`, `EMAIL_SMTP_PORT`, `EMAIL_SMTP_USERNAME`,`EMAIL_SMTP_PASSWORD`.
+
+Save your Application Settings.
+
+##### Step 4: That's it!
+
+It might take a few seconds for the application to restart and load all the new settings. Once that's done, open `https://{your_appname}.azurewebsites.net` and you should see the signup screen to create your Administrator account, and you can enjoy your Fider instance and share it with your users.
+
+![Installation page of a clean Fider instance](./assets/fider-clean-install.png)

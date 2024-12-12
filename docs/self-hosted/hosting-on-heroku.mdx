@@ -1,0 +1,70 @@
+---
+sidebar_position: 3
+title: Hosting on Heroku
+slug: heroku
+description: Deploy Fider on Heroku
+---
+import CloudIstance from './_markdown-cloud-instance.mdx'
+
+<CloudIstance />
+
+### Prerequisites
+
+##### A [Heroku](https://www.heroku.com) account
+
+It's totally free to sign up, and will allow you to deploy your application for free on a small instance.
+
+##### E-mail Sender
+
+You can choose between a **SMTP Server** or a **[Mailgun](https://www.mailgun.com)** account.
+
+### Deploying your instance
+
+##### Step 1: Create a new heroku app
+
+Click the upper left button to create a new application. You will be prompted for an app name, you can choose anything you want. You also need to choose the hosting region, choose the one closest to you or your users.
+
+![Creating a new app on Heroku](./assets/heroku-create-new-app.png)
+
+##### Step 2: add a database to the application
+
+Under the **Resources** tab, in the **Add-ons** section, search and add the **Heroku Postgres** add-on to provide a database for your instance. When prompted for the Plan Name, you can leave the default **Hobby Dev - Free** selected and click **Provision**.
+
+![Provisioning the Postgresql database](./assets/heroku-postgres-add-on.png)
+
+##### Step 3: add buildpacks
+
+Buildpacks are Heroku's scripts that are run when an app is deployed, they are used to "build" your app, usually install dependencies and compile code. For Fider you need two buildpacks: go and nodejs. Under the **Settings** tab, in the **Buildpacks** section, click on **Add buildpack**, click on the **go** button and then on **Save changes** on the dialog.
+
+![Adding the Go buildpack](./assets/heroku-go-buildpack.png)
+
+Repeat the operation with the **nodejs** buildpack. You should now have two buildpacks listed in this section.
+
+##### Step 4: configure application
+
+In the **Config Vars** section of the **Settings** tab, click on **Reveal Config Vars** to display the current environment variables set on your application. You should already have one `DATABASE_URL` variable set. Don't touch it, it was automatically set by Heroku when you provisioned your database. You need to add some values for the Fider instance to work properly:
+
+- `BASE_URL`: https://yourapplicationame.herokuapp.com
+- `JWT_SECRET`: It's a secret key used for authentication tokens, you can generate a good secret using an online tool like [this one](https://www.allkeysgenerator.com/Random/Security-Encryption-Key-Generator.aspx) (take at least 512-bit for security).
+- `EMAIL_NOREPLY`: Set this variable to a no-reply address associated to your instance.
+- `EMAIL_MAILGUN_API`: Your Mailgun API key.
+- `EMAIL_MAILGUN_REGION`: Set to US or EU. Use capital letters only, defaults to US.
+- `EMAIL_MAILGUN_DOMAIN`: Set this variable to your Mailgun domain.
+
+![Application environment variables](./assets/heroku-env-variables.png)
+
+**If you're using plain SMTP to send emails**, you need to replace `MAILGUN_*` variables by the equivalent SMTP variables: `EMAIL_SMTP_HOST`, `EMAIL_SMTP_PORT`, `EMAIL_SMTP_USERNAME`,`EMAIL_SMTP_PASSWORD`.
+
+##### Step 5: deploy your application
+
+The easiest way to deploy your application to Heroku is to connect your application to a github repository. Fork the [Fider official repository](https://github.com/getfider/fider) and connect this fork to your Heroku application under the **Deploy** tab in the **Deployment method**.
+
+![Connecting your Github repository for deployment](./assets/heroku-github-connection.png)
+
+You can now deploy your application by clicking on the **Deploy Branch** button. Once your app is deployed successfully, you can access the app online by clicking the **View** button.
+
+![Successfull deployment of your application](./assets/heroku-app-deployment.png)
+
+That's it! You should see the signup screen to create your Administrator account, and you can enjoy your free Fider instance and share it with your users.
+
+**Reminder:** To keep your instance always up to date with latest features and fixes, update your fork every once in a while.

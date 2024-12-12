@@ -1,0 +1,290 @@
+---
+sidebar_position: 4
+title: Posts
+---
+
+<h3 id="posts">Posts</h3>
+
+- <a href="#list-posts">List Posts</a>
+- <a href="#get-post">Get a Post</a>
+- <a href="#create-post">Create a Post</a>
+- <a href="#edit-post">Edit a Post</a>
+- <a href="#delete-post">Delete a Post</a>
+- <a href="#respond-post">Respond to a Post</a>
+
+A **Post** is new topic created by a user on the Feedback Site, while it's usually a suggestion or feature request, sometimes it might also be a bug report or a complain.
+
+<h4 id="list-posts">List Posts</h4>
+
+- **Authentication:** Optional
+
+```
+GET /api/v1/posts
+```
+
+**Parameters**
+
+| Name    | Type      | Description                                                                                                                                                                                   |
+| ------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `query` | `string`  | The search keywords                                                                                                                                                                           |
+| `view`  | `string`  | The filter and order to apply. Possible values are `all`, `recent`, `my-votes`, `most-wanted`, `most-discussed`, `planned`, `started`, `completed`, `declined` and `trending`. Default: `all` |
+| `limit` | `integer` | The number of entries to return. Default: 30                                                                                                                                                  |
+| `tags`  | `string`  | The list of tags to filter by. Separate multiple tags by ,                                                                                                                                    |
+
+**Example**
+
+```
+GET <baseURL>/api/v1/posts?view=completed&query=open+links&limit=50
+```
+
+**Response**
+
+```
+200 OK
+---
+[
+  {
+    "id": 4315,
+    "number": 65,
+    "title": "Open links in new tab",
+    "slug": "open-links-in-new-tab",
+    "description": "When somebody pastes a link in the description of an item, it has to open link in a new tab so you don't lose focus in the app",
+    "createdAt": "2018-05-16T13:50:34.579281Z",
+    "user": {
+      "id": 45642,
+      "name": "Jon Snow",
+      "role": "visitor"
+    },
+    "hasVoted": true,
+    "votesCount": 34,
+    "commentsCount": 0,
+    "status": "completed",
+    "response": {
+      "text": "This is now available on `v0.14`. Links from any markdown text will open in a new tab.",
+      "respondedAt": "2018-06-13T17:48:27.073178Z",
+      "user": {
+        "id": 8,
+        "name": "Arya Stark",
+        "role": "administrator"
+      },
+      "original": null
+    },
+    "tags": ["hard","critical"]
+  },
+  {
+    ...
+  }
+]
+```
+
+<h4 id="get-post">Get a Post</h4>
+
+- **Authentication:** Optional
+
+```
+GET /api/v1/posts/{number}
+```
+
+**Parameters**
+
+| Name     | Type     | Description                                       |
+| -------- | -------- | ------------------------------------------------- |
+| `number` | `number` | **Required.** The number of the post to retrieve. |
+
+**Example**
+
+```
+GET <baseURL>/api/v1/posts/65
+```
+
+**Response**
+
+```
+200 OK
+---
+{
+  "id": 4315,
+  "number": 65,
+  "title": "Open links in new tab",
+  "slug": "open-links-in-new-tab",
+  "description": "When somebody pastes a link in the description of an item, it has to open link in a new tab so you don't lose focus in the app",
+  "createdAt": "2018-05-16T13:50:34.579281Z",
+  "user": {
+    "id": 45642,
+    "name": "Jon Snow",
+    "role": "visitor"
+  },
+  "hasVoted": true,
+  "votesCount": 34,
+  "commentsCount": 0,
+  "status": "completed",
+  "response": {
+    "text": "This is now available on `v0.14`. Links from any markdown text will open in a new tab.",
+    "respondedAt": "2018-06-13T17:48:27.073178Z",
+    "user": {
+      "id": 8,
+      "name": "Arya Stark",
+      "role": "administrator"
+    },
+    "original": null
+  },
+  "tags": ["hard","critical"]
+}
+```
+
+<h4 id="create-post">Create a Post</h4>
+
+- **Authentication:** Required
+
+```
+POST /api/v1/posts
+```
+
+**Parameters**
+
+| Name          | Type     | Description                          |
+| ------------- | -------- | ------------------------------------ |
+| `title`       | `string` | **Required.** The title of the post. |
+| `description` | `string` | The description of the post.         |
+
+**Example**
+
+```
+POST <baseURL>/api/v1/posts
+---
+{
+  "title": "Allow users to edit any comment",
+  "description": "This is useful to fix some minor typos or introduce more details"
+}
+```
+
+**Response**
+
+```
+200 OK
+---
+{
+  "id": 6848,
+  "number": 47,
+  "title": "Allow users to edit any comment",
+  "slug": "allow-users-to-edit-any-comment"
+}
+```
+
+<h4 id="edit-post">Edit a Post</h4>
+
+- **Authentication:** Required
+- **Required Role:** Collaborator or Administrator
+
+```
+PUT /api/v1/posts/{number}
+```
+
+**Parameters**
+
+| Name          | Type     | Description                                        |
+| ------------- | -------- | -------------------------------------------------- |
+| `number`      | `number` | **Required.** The number of the post to be edited. |
+| `title`       | `string` | **Required.** The title of the post.               |
+| `description` | `string` | The description of the post.                       |
+
+**Example**
+
+```
+POST <baseURL>/api/v1/posts/47
+---
+{
+  "title": "Allow users to edit their own comments",
+  "description": "This is useful to fix some minor typos or introduce more details"
+}
+```
+
+**Response**
+
+```
+200 OK
+---
+{}
+```
+
+<h4 id="delete-post">Delete a Post</h4>
+
+- **Authentication:** Required
+- **Required Role:** Administrator
+
+```
+DELETE /api/v1/posts/{number}
+```
+
+**Parameters**
+
+| Name     | Type     | Description                                         |
+| -------- | -------- | --------------------------------------------------- |
+| `number` | `number` | **Required.** The number of the post to be deleted. |
+| `text`   | `string` | The reason why this post is being deleted.          |
+
+**Example**
+
+```
+DELETE <baseURL>/api/v1/posts/47
+---
+{
+  "text": "this is spam!"
+}
+```
+
+**Response**
+
+```
+200 OK
+---
+{}
+```
+
+<h4 id="respond-post">Respond to a Post</h4>
+
+- **Authentication:** Required
+- **Required Role:** Collaborator or Administrator
+
+```
+PUT /api/v1/posts/{number}/status
+```
+
+**Parameters**
+
+| Name             | Type     | Description                                                                                                                        |
+| ---------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `number`         | `number` | **Required.** The number of the post to add a response.                                                                            |
+| `status`         | `string` | **Required.**The new status of the post. Possible values are `open`, `planned`, `started`, `completed`, `declined` and `duplicate` |
+| `text`           | `string` | An optional description of what is the status on this post. This is made visible to all visitors on the website.                   |
+| `originalNumber` | `number` | The number of the post to merge this into. This parameter **Required** when status is duplicate.                                   |
+
+**Example #1**
+
+```
+PUT <baseURL>/api/v1/posts/47/status
+---
+{
+  "status": "declined",
+  "text": "this is spam!"
+}
+```
+
+**Example #2**
+
+```
+PUT <baseURL>/api/v1/posts/47/status
+---
+{
+  "status": "duplicate",
+  "originalNumber": 84
+}
+```
+
+**Response**
+
+```
+200 OK
+---
+{}
+```

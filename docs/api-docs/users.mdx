@@ -1,0 +1,97 @@
+---
+sidebar_position: 7
+title: Users
+---
+
+<h3 id="users">Users</h3>
+
+- <a href="#list-users">List Users</a>
+- <a href="#create-user">Create a User</a>
+
+<h4 id="list-users">List Users</h4>
+
+- **Authentication:** Required
+- **Required Role:** Collaborator or Administrator
+
+```
+GET /api/v1/users
+```
+
+**Example**
+
+```
+GET <baseURL>/api/v1/users
+```
+
+**Response**
+
+```
+200 OK
+---
+[
+  {
+    "id": 3,
+    "name": "Arya Stark",
+    "role": "administrator",
+    "status": "active",
+  },
+  {
+    "id": 5,
+    "name": "Jon Snow",
+    "role": "visitor",
+    "status": "active"
+  },
+  {
+    "id": 24,
+    "name": "The Queen",
+    "role": "collaborator",
+    "status": "blocked"
+  },
+  {
+    ...
+  }
+]
+```
+
+<h4 id="create-user">Create a User</h4>
+
+- **Authentication:** Required
+- **Required Role:** Administrator
+
+```
+POST /api/v1/users
+```
+
+The Create User API will only create a new user if it cannot find an existing user with given email or reference ID. If the user already exists on Fider, the ID of the existing user is returned instead of creating a new user.
+
+The ID returned by this API can be used to impersonate that user. Read more about <a href="#impersonation">impersonation</a>.
+
+**Parameters**
+
+| Name        | Type     | Description                                 |
+| ----------- | -------- | ------------------------------------------- |
+| `name`      | `string` | **Required.** The name of the user.         |
+| `email`     | `string` | The email of the user.                      |
+| `reference` | `string` | A unique ID for the user in another system. |
+
+**Example**
+
+```
+POST <baseURL>/api/v1/users
+---
+{
+  "name": "Jon Snow",
+  "email": "jon.snow@got.com",
+  "reference": "CRM-817453"
+}
+```
+
+**Response**
+
+```
+200 OK
+---
+{
+  "id": 6332
+}
+```

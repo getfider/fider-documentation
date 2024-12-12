@@ -1,0 +1,55 @@
+---
+sidebar_position: 1
+title: Overview
+---
+
+<h3 id="overview">Overview</h3>
+
+Welcome to the Fider API documentation.
+
+The Fider API allows you to manage Posts and other data within your Fider instance in a simple, programmatic way using conventional HTTP requests. The endpoints are intuitive and powerful, allowing you to easily make calls to retrieve information or to execute actions.
+
+**Version**
+
+The **API v1** was introduced on Fider `v0.16.0`. Make sure you're running the latest version of Fider to leverage the API. All Cloud users on `fider.io` are already on the latest so you can start using it right now.
+
+**Request**
+
+Allowed HTTP Verbs are GET, POST, PUT and DELETE. All data must be sent as JSON.
+
+Requests are sent to your Fider URL using the HTTP/HTTPS protocol.
+
+| Hosting                  | URL                                                                                                                 | Protocol                   |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| Cloud                    | `https://<subdomain>.fider.io` or, if configured, your custom domain name (e.g: `https://feedback.yourcompany.com`) | HTTPS only                 |
+| <nobr>Self-Hosted</nobr> | The URL you have configured                                                                                         | <nobr>HTTP or HTTPS</nobr> |
+
+**Response**
+
+Every response will be encoded with `application/json` and one of the following status code.
+
+| Status Code                     | Description                                                                                                                       |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 200 OK                          | Fider has accepted and processed your request, no error was encountered.                                                          |
+| 400 Bad Request                 | Something is incorrect with your request, it might be missing a parameter or have an invalid value. See **Error Messages** below. |
+| 403 Forbidden                   | API Key is not present or not allowed to perform the operation                                                                    |
+| 404 Not Found                   | The resource you're looking for doesn't exist.                                                                                    |
+| <nobr>500 Internal Error</nobr> | This generally indicates a server-side problem on Fider and it cannot fulfill your request currently.                             |
+
+**Error Messages**
+
+Every `400 Bad Request` response contains a JSON payload with details of what went wrong. Each `error (object)` contains a `message (string)` describing what is incorrect and may also contain a `field (string)` property. If the error object doesn't contain the field, that's a general error message.
+
+```
+{
+  "errors": [
+    {
+      "field": "color",
+      "message": "'dark' is an invalid color."
+    },
+    {
+      "message": "A tag named 'suggestion' already exists."
+    }
+  ]
+}
+```

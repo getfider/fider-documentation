@@ -1,0 +1,116 @@
+---
+sidebar_position: 5
+title: Votes
+---
+
+<h3 id="votes">Votes</h3>
+
+- <a href="#add-vote">Vote on a Post</a>
+- <a href="#remove-vote">Remove Vote from a Post</a>
+- <a href="#list-post-votes">List Votes of a Post</a>
+
+<h4 id="add-vote">Vote on a Post</h4>
+
+- **Authentication:** Required
+
+When casting a vote upon a post, the vote is registered under the current authenticated user. Impersonate another user to vote on behalf of them.
+
+```
+POST /api/v1/posts/{number}/votes
+```
+
+**Parameters**
+
+| Name     | Type     | Description                                      |
+| -------- | -------- | ------------------------------------------------ |
+| `number` | `number` | **Required.** The number of the post to vote on. |
+
+**Example**
+
+```
+POST <baseURL>/api/v1/posts/47/votes
+```
+
+**Response**
+
+```
+200 OK
+---
+{}
+```
+
+<h4 id="remove-vote">Remove Vote from a Post</h4>
+
+- **Authentication:** Required
+
+When removing the vote from a post, the vote is removed from the current authenticated user. Impersonate another user to remove votes on behalf of them.
+
+```
+DELETE /api/v1/posts/{number}/votes
+```
+
+**Parameters**
+
+| Name     | Type     | Description                                                    |
+| -------- | -------- | -------------------------------------------------------------- |
+| `number` | `number` | **Required.** The number of the post to have the vote removed. |
+
+**Example**
+
+```
+DELETE <baseURL>/api/v1/posts/47/votes
+```
+
+**Response**
+
+```
+200 OK
+---
+{}
+```
+
+<h4 id="list-post-votes">List Votes of a Post</h4>
+
+- **Authentication:** Required
+- **Required Role:** Collaborator or Administrator
+
+```
+GET /api/v1/posts/{number}/votes
+```
+
+**Parameters**
+
+| Name     | Type     | Description                                             |
+| -------- | -------- | ------------------------------------------------------- |
+| `number` | `number` | **Required.** The number of the post to list the votes. |
+
+**Example**
+
+```
+GET <baseURL>/api/v1/posts/47/votes
+```
+
+**Response**
+
+```
+200 OK
+---
+[
+  {
+    "createdAt":"2018-11-28T12:18:26.95415Z",
+    "user":{
+      "id":1234,
+      "name":"Jon Snow",
+      "email":"jon.snow@got.com"
+    }
+  },
+  {
+    "createdAt":"2018-11-28T15:45:45.612288Z",
+    "user":{
+      "id":5678,
+      "name":"Arya Stark",
+      "email":"arya.stark@got.com"
+    }
+  }
+]
+```

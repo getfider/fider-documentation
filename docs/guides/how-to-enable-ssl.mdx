@@ -1,0 +1,63 @@
+---
+sidebar_position: 1
+title: How to enable SSL/TLS
+---
+
+There are three options on how to configure SSL/TLS on your Fider instance.
+
+### 1. HTTPS with a Reverse Proxy
+
+This is often the most popular option as multiple reverse proxy supports TLS termination and various other useful features.
+It's beyond the scope of this page to explain how to set it up, but these are the most popular options:
+
+- https://traefik.io
+- https://caddyserver.com
+- https://nginx.com
+
+### 2. Automatic HTTPS with Let's Encrypt
+
+Fider integrates with [Let's Encrypt](https://letsencrypt.org/) natively, so you can have TLS without installing anything else or buying your own certificate.
+
+To enable it:
+
+1. Ensure your app is NOT behind a proxy.
+2. Add the SSL_AUTO to your docker-compose.yml
+3. Restart your application.
+
+```
+version: '2'
+services:
+  db:
+    ...
+  app:
+    ports:
+      - "80:80"
+      - "443:3000"
+    environment:
+      ...
+      SSL_AUTO: "true"
+```
+
+It can take a few seconds on the initial request to generate a certificate, but after visiting your site, you'll should see the green lock and the certificate generated for you.
+
+**NOTE**: You must enable firewall access on port 80 and 443. Fider will redirect all traffic from HTTP to HTTPS.
+
+### 3. HTTPS with your own certificate
+
+You can also buy (or generate) a certificate and use it on Fider. Copy your `.crt` and `.key` files into `/var/fider/etc/`, add the following to your docker-compose.yml and restart your application.
+
+```
+version: '2'
+services:
+  db:
+    ...
+  app:
+    ports:
+      - "443:3000"
+    environment:
+      ...
+      SSL_CERT: filename.crt
+      SSL_CERT_KEY: filename.key
+    volumes:
+      - /var/fider/etc:/app/etc
+```
