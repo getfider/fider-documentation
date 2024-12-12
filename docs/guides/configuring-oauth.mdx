@@ -1,0 +1,156 @@
+---
+sidebar_position: 4
+title: How to configure OAuth
+slug: /configuring-oauth
+description: How to configure OAuth
+---
+OAuth is an open standard for authentication and authorization. Fider is an OAuth client that can connect to any OAuth2 provider to enable a fast, easy and secure sign in process.
+
+Fider has native support to Facebook, Google and GitHub. To add any other OAuth provider please follow this guide.
+
+### Registering a new OAuth Provider
+
+While logged in as an Administrator, navigate to **Site Settings -> Authentication**.
+
+This page list all registered providers, either Enabled or Disabled. To register a new provider, click **Add New** and fill the form with all the required information. If you're new to OAuth, we've prepared a <a href="#oauth-common-providers">list of how to configure the most common providers</a>.
+
+<h3 id="oauth-testing">Testing</h3>
+
+Before enabling any provider on Fider, we highly recommend that you keep it disabled and use the **Test button** to confirm it's working properly.
+
+**Test button** becomes available after registering a new provider. Whenever clicked, Fider opens a popup and redirects you to the provider of your
+choice to start the authentication process. Once authenticated, you'll be redirected back to Fider and a report will be presented. Once you're happy with the configuration,
+you can enable it and make it available for everyone to use during the sign in process.
+
+<div className="flex flex-col md:flex-row space-x-2">
+![A correctly configured OAuth](./assets/good-oauth-echo-response.png)
+![How an incorrect configuration may look like](./assets/bad-oauth-echo-response.png)
+</div>
+
+<h3 id="oauth-common-providers">Common Providers</h3>
+
+#### Facebook
+
+This is only required for self-hosted Fider. Our Cloud service already has Facebook enabled.
+
+1. Create a new Facebook app at [https://developers.facebook.com/apps](https://developers.facebook.com/apps) and enable Facebook Login product
+2. Take note of the **App ID** and an **App Secret** that you'll be given
+3. Input **&lt;your-fider-site&gt;/oauth/facebook/callback** into **Valid OAuth Redirect URIs** field and change your Facebook app status to Live
+4. Update your environment variable as follows
+   - **OAUTH_FACEBOOK_APPID:** `use the App ID given by Facebook`
+   - **OAUTH_FACEBOOK_SECRET:** `use the App Secret given by Facebook`
+
+#### Google
+
+This is only required for self-hosted Fider. Our Cloud service already has Google enabled.
+
+1. Create a Google app at [https://console.developers.google.com](https://console.developers.google.com) by navigating to Credentials -> OAuth Client ID. Take note of the **Client ID** and **Client Secret** that you'll be given
+2. Input **&lt;your-fider-site&gt;/oauth/google/callback** into **Authorized redirect URIs** field
+3. Update your environment variable as follows
+   - **OAUTH_GOOGLE_CLIENTID:** `use the Client ID given by Google`
+   - **OAUTH_GOOGLE_SECRET:** `use the Client Secret given by Google`
+
+<h4>GitHub</h4>
+
+This is only required for self-hosted Fider. Our Cloud service already has GitHub enabled.
+
+1. Create a GitHub app at [https://github.com/settings/applications/new](https://github.com/settings/applications/new). Use **&lt;your-fider-site&gt;/oauth/github/callback** as the callback URL during registration.
+2. Take note of the **Client ID** and **Client Secret** that you'll be given
+3. Update your environment variable as follows
+   - **OAUTH_GITHUB_CLIENTID:** `use the Client ID given by GitHub`
+   - **OAUTH_GITHUB_SECRET:** `use the Client Secret given by GitHub`
+
+<h4>Microsoft Azure AD</h4>
+
+1. Login to [https://portal.azure.com](https://portal.azure.com) and navigate to **Azure Active Directory -&gt; App Registrations**
+2. Click on New Application Registration and create a new application. Give it a name, select Web app / API type and use your Fider site URL as the sign-on URL
+3. Take note of the **Application ID** that you'll be given
+4. Navigate to **Settings -> Keys** and generate a new key. We recommend that you set this key to never expire. Take note of the **Value** of this key
+5. Fill Fider OAuth form as follows and then press Save
+   - **Display Name:** Azure AD
+   - **Client ID:** `use the Application ID given by Azure`
+   - **Client Secret:** `use the Key Value you generated in Azure`
+   - **Authorize URL:** https://login.microsoftonline.com/YOUR_TENANT_ID/oauth2/v2.0/authorize
+   - **Token URL:** https://login.microsoftonline.com/YOUR_TENANT_ID/oauth2/v2.0/token
+   - **Profile API URL:** https://graph.microsoft.com/v1.0/me
+   - **Scope:** User.Read
+   - **JSON Path ID:** id
+   - **JSON Path Name:** displayName
+   - **JSON Path Email:** mail
+   - **Status:** Disabled
+6. Find Azure AD on the list of OAuth providers and copy the callback URL
+7. On Azure, navigate to your newly created **App > Authentication > Web > Redirect URIs** and replace existing URL with the copied callback URL from Fider
+8. You can now <a href="#oauth-testing">Test</a> this configuration
+
+#### Twitch
+
+1. Navigate to [https://dev.twitch.tv/console/apps](https://dev.twitch.tv/console/apps) and register your new Twitch App
+2. Twitch requires you to input the OAuth Redirect URL upon registration. For now, just type any valid URL like http://example.org, we'll change this later
+3. Find your app on the list and click Manage
+4. Take note of the **Client ID** that is shown
+5. Click on **New Secret** and take note of **Client Secret** as well
+6. Fill Fider OAuth form as follows and then press Save
+   - **Display Name:** Twitch
+   - **Client ID:** `use the Client ID given by Twitch`
+   - **Client Secret:** `use the Client Secret given by Twitch`
+   - **Authorize URL:** https://id.twitch.tv/oauth2/authorize
+   - **Token URL:** https://id.twitch.tv/oauth2/token
+   - **Profile API URL:** https://id.twitch.tv/oauth2/userinfo
+   - **Scope:** user:read:email openid
+   - **JSON Path ID:** sub
+   - **JSON Path Name:** preferred_username
+   - **JSON Path Email:** email
+   - **Status:** Disabled
+7. Find Twitch on the list of OAuth providers and copy the callback URL
+8. On Twitch, navigate to your newly created App, click manage and replace existing **OAuth Redirect URL** with the copied callback URL from Fider
+9. You can now <a href="#oauth-testing">Test</a> this configuration
+
+#### Discord
+
+1. Navigate to [https://discord.com/developers/applications](https://discord.com/developers/applications) and click on Create on aplication
+2. Change your App Name and take note of the **Client ID** that is shown
+3. Under Client Secret, click on **click to reveal** and take note of **Client Secret** as well
+4. Fill Fider OAuth form as follows and then press Save
+   - **Display Name:** Discord
+   - **Client ID:** `use the Client ID given by Discord`
+   - **Client Secret:** `use the Client Secret given by Discord`
+   - **Authorize URL:** https://discord.com/api/oauth2/authorize
+   - **Token URL:** https://discord.com/api/oauth2/token
+   - **Profile API URL:** https://discord.com/api/users/@me
+   - **Scope:** identify email
+   - **JSON Path ID:** id
+   - **JSON Path Name:** username
+   - **JSON Path Email:** email
+   - **Status:** Disabled
+5. Find Discord on the list of OAuth providers and copy the callback URL
+6. On Discord, navigate to your newly created **App -> OAuth2 -> Redirects**, click Add Redirect, paste the callback URL from Fider and hit Save Changes
+7. You can now <a href="#oauth-testing">Test</a> this configuration
+
+#### GitLab
+
+1. Navigate to [https://gitlab.com/oauth/applications](https://gitlab.com/oauth/applications)
+2. Input an application name, for example, Fider
+3. GitLab requires you to input the OAuth Redirect URL upon registration. For now, just type any valid URL like http://example.org, we'll change this later
+4. Select **read_user** on the list of scopes
+5. After saving, take note of the **Application Id** and **Secret** that is shown
+6. Fill Fider OAuth form as follows and then press Save
+   - **Display Name:** GitLab
+   - **Client ID:** `use the Application Id given by GitLab`
+   - **Client Secret:** `use the Secret given by GitLab`
+   - **Authorize URL:** https://gitlab.com/oauth/authorize
+   - **Token URL:** https://gitlab.com/oauth/token
+   - **Profile API URL:** https://gitlab.com/api/v4/user
+   - **Scope:** read_user
+   - **JSON Path ID:** id
+   - **JSON Path Name:** name
+   - **JSON Path Email:** email
+   - **Status:** Disabled
+7. Find GitLab on the list of OAuth providers and copy the callback URL
+8. On GitLab, navigate to your newly created application, click Edit and replace the Redirect URL with the copied callback URL from Fider
+9. You can now <a href="#oauth-testing">Test</a> this configuration
+
+#### Twitter
+
+Unfortunately Twitter doesn't fully implement the OAuth2 protocol and the authorization flow. This means we cannot use this process to add Twitter authentication to Fider.
+
+If you'd like to use Twitter as a sign in method for your site, please cast your vote on [Add Twitter as authentication method](https://feedback.fider.io/ideas/1/add-twitter-as-authentication-method) as this requires internal changes to Fider.
