@@ -1,8 +1,10 @@
 import { themes as prismThemes } from "prism-react-renderer";
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
+import "dotenv/config";
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
+const baseUrl = process.env.BASE_URL || "/";
 
 const config: Config = {
   title: "Fider Docs",
@@ -13,7 +15,7 @@ const config: Config = {
   url: "https://fider.io",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: "/docs/",
+  baseUrl: baseUrl,
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -75,8 +77,7 @@ const config: Config = {
         alt: "Fider logo",
         src: "img/logo-100x100.png",
       },
-      items: [
-      ],
+      items: [],
     },
     footer: {
       style: "dark",
@@ -113,7 +114,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `© ${new Date().getFullYear()} Fider is a Northern App Labs Ltd project`
+      copyright: `© ${new Date().getFullYear()} Fider is a Northern App Labs Ltd project`,
     },
     prism: {
       theme: prismThemes.github,
