@@ -77,7 +77,7 @@ const config: Config = {
         alt: "Fider logo",
         src: "img/logo-100x100.png",
       },
-      items: [],
+      items: [...require("./socials.ts")],
     },
     footer: {
       style: "dark",
