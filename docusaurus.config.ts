@@ -14,7 +14,6 @@ const config: Config = {
   url: "https://fider.io",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  trailingSlash: true,
   baseUrl: "/docs/",
 
   // GitHub pages deployment config.
