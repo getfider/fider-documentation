@@ -22,4 +22,4 @@ The easiest way to get started with Fider is to use our [Cloud Instance](https:/
 
 :::
 
-Check out the [Self-Hosted](/docs/self-hosted) section to learn how to install Fider on your own server.
+Check out the [Self-Hosted](/self-hosted) section to learn how to install Fider on your own server.
