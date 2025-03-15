@@ -37,7 +37,7 @@ Create a `/var/fider` folder and copy content below into a file `/var/fider/dock
 services:
   db:
     restart: always
-    image: postgres:12
+    image: postgres:17
     volumes:
       - /var/fider/pg_data:/var/lib/postgresql/data
     environment:
