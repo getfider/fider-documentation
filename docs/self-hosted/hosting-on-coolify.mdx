@@ -1,0 +1,91 @@
+---
+sidebar_position: 1
+title: Hosting with Coolify
+description: Hosting fider with docker, using coolify
+slug: /hosting-coolify
+---
+
+import CloudInstance from './_markdown-cloud-instance.mdx'
+
+<CloudInstance />
+
+### Prerequisites
+
+##### A server running coolify [https://coolify.io/](https://coolify.io/)
+
+Coolify is an excellent way to host your fider app. Coolify is like a PaaS - a layer sitting on top of your server managing your docker containers for you. It provides a nice way to get your apps set up and running with little fuss. And best of all - there's a [Fider Service](https://coolify.io/docs/services/fider) ready to install with a single click.
+
+### Installing and Running
+
+This guide assumes you already have your coolify setup, so you have one server that's running coolify (or you're using the hosted paid for version), and you have at least one server that coolify is managing (these could be the same server - they often are).
+
+##### Step 1: Add fider to your server.
+
+This is as simple as adding a new resource to your server, using the coolify UI. You'll find fider there as a pre-configured service, so select that.
+That will set you up with a fider app instance, and also a postgres database which is used by the fider instance.
+
+##### Step 2: Configure your setup as required.
+
+If you click on "Edit Compose file" in coolify, you'll see the docker compose file that is going to be deployed on your server. It looks like this:
+
+```
+services:
+  fider:
+    image: 'getfider/fider:stable'
+    environment:
+      - SERVICE_FQDN_FIDER_3000
+      - BASE_URL=$SERVICE_FQDN_FIDER_3000
+      - 'DATABASE_URL=postgres://$SERVICE_USER_POSTGRES:$SERVICE_PASSWORD_POSTGRES@database:5432/fider?sslmode=disable'
+      - JWT_SECRET=$SERVICE_PASSWORD_64_FIDER
+      - 'EMAIL_NOREPLY=${EMAIL_NOREPLY:-noreply@example.com}'
+      - EMAIL_MAILGUN_API=$EMAIL_MAILGUN_API
+      - EMAIL_MAILGUN_DOMAIN=$EMAIL_MAILGUN_DOMAIN
+      - EMAIL_MAILGUN_REGION=$EMAIL_MAILGUN_REGION
+      - 'EMAIL_SMTP_HOST=${EMAIL_SMTP_HOST:-smtp.mailgun.com}'
+      - 'EMAIL_SMTP_PORT=${EMAIL_SMTP_PORT:-587}'
+      - 'EMAIL_SMTP_USERNAME=${EMAIL_SMTP_USERNAME:-postmaster@mailgun.com}'
+      - EMAIL_SMTP_PASSWORD=$EMAIL_SMTP_PASSWORD
+      - EMAIL_SMTP_ENABLE_STARTTLS=$EMAIL_SMTP_ENABLE_STARTTLS
+      - EMAIL_AWSSES_REGION=$EMAIL_AWSSES_REGION
+      - EMAIL_AWSSES_ACCESS_KEY_ID=$EMAIL_AWSSES_ACCESS_KEY_ID
+      - EMAIL_AWSSES_SECRET_ACCESS_KEY=$EMAIL_AWSSES_SECRET_ACCESS_KEY
+    healthcheck:
+      test:
+        - CMD
+        - /app/fider
+        - ping
+      interval: 2s
+      timeout: 10s
+      retries: 10
+  database:
+    image: 'postgres:12'
+    volumes:
+      - 'pg_data:/var/lib/postgresql/data'
+    environment:
+      - POSTGRES_USER=$SERVICE_USER_POSTGRES
+      - POSTGRES_PASSWORD=$SERVICE_PASSWORD_POSTGRES
+      - 'POSTGRES_DB=${POSTGRES_DB:-fider}'
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}'
+      interval: 5s
+      timeout: 20s
+      retries: 10
+```
+
+Now this should be enough to get running without any changes, simply deploy in coolify, and then open the link to your fider instance, as configured by coolify.
+
+Chances are you'll probably need / want to change the URL in some way - e.g. for me just now my newly created instance has a URL that includes the UUID of the instance that coolify created. That's pretty simple to do in coolify too - just click on "settings" for the fider service, and in there you can change the URL that coolify is using for you. You might need to restart once you've changed this.
+
+##### Step 3: Configure your email provider.
+
+Fider isn't going to work very well without a way to send emails. Fiders various email options are [listed here](/hosting-instance#installing-and-running). For example in my own instance, I've configured SMTP with these 3 environment variables:
+
+```
+EMAIL_SMTP_ENABLE_STARTTLS=false
+EMAIL_SMTP_PASSWORD=nottellingyou
+EMAIL_SMTP_USERNAME=postmaster@somewhere.com
+```
+
+That's pretty much all there is to it !
