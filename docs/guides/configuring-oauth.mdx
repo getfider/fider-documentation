@@ -4,6 +4,7 @@ title: How to Configure OAuth
 slug: /configuring-oauth
 description: How to Configure OAuth
 ---
+
 OAuth is an open standard for authentication and authorization. Fider is an OAuth client that can connect to any OAuth2 provider to enable a fast, easy and secure sign in process.
 
 Fider has native support to Facebook, Google and GitHub. To add any other OAuth provider please follow this guide.
@@ -14,6 +15,54 @@ While logged in as an Administrator, navigate to **Site Settings -> Authenticati
 
 This page list all registered providers, either Enabled or Disabled. To register a new provider, click **Add New** and fill the form with all the required information. If you're new to OAuth, we've prepared a <a href="#oauth-common-providers">list of how to configure the most common providers</a>.
 
+### Configuring the JSON paths
+
+The JSON path tells Fider which bits of the JSON response to extract for the ID, Name and Email fields.
+
+Here's an example JSON response from the OAuth provider:
+
+```json
+{
+  id: "35235"
+  title: "Sr. Account Manager",
+  profile: {
+    dob: "01/05/2018",
+    name: "John Doe"
+    first_name: "John"
+    last_name: "Doe"
+    emails: [
+      "john.doe@company.com"
+    ]
+  }
+}
+```
+
+#### Id
+
+The uniqure identifier for the user from the OAuth provider. This ID **must** be unique within the provider or unexpected side effects might happen.
+
+For the example JSON response, the path would be `id`.
+
+#### Name
+
+The display name or username of the user. Optional but **highly recommended**.
+
+For the example JSON response, the path would be `profile.name`.
+
+:::tip
+
+Fider now supports composite paths, so you can use multiple fields to make up the name!
+To do this, use + to indicate how the name is made up - you can concatenate paths and also string literals together to make to the display name.
+
+In the example JSON response, the path could be `profile.first_name` + ' ' + `profile.last_name`.
+:::
+
+#### Email
+
+The email address of the user. Optional but **highly recommended**.
+
+In the example JSON response, the path would be `profile.emails[0]`.
+
 <h3 id="oauth-testing">Testing</h3>
 
 Before enabling any provider on Fider, we highly recommend that you keep it disabled and use the **Test button** to confirm it's working properly.
@@ -23,8 +72,9 @@ choice to start the authentication process. Once authenticated, you'll be redire
 you can enable it and make it available for everyone to use during the sign in process.
 
 <div className="flex flex-col md:flex-row space-x-2">
-![A correctly configured OAuth](./assets/good-oauth-echo-response.png)
-![How an incorrect configuration may look like](./assets/bad-oauth-echo-response.png)
+  ![A correctly configured OAuth](./assets/good-oauth-echo-response.png) ![How
+  an incorrect configuration may look
+  like](./assets/bad-oauth-echo-response.png)
 </div>
 
 <h3 id="oauth-common-providers">Common Providers</h3>
