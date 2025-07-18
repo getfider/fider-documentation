@@ -25,7 +25,7 @@ Although Fider works on PostgreSQL 9.6, we recommend using PostgreSQL 12+. This 
 
 ##### E-mail Sender
 
-You can choose between an **SMTP Server**, **[Mailgun](https://www.mailgun.com)**, **[Resend](https://resend.com)**, or **[AWS SES](https://aws.amazon.com/ses/)** account.
+You can choose between a **SMTP Server** or a **[Mailgun](https://www.mailgun.com)** account.
 
 ### Installing and Running
 
@@ -63,7 +63,7 @@ services:
 
       ###
       # EMAIL
-      # Either EMAIL_MAILGUN_* or EMAIL_SMTP_*, EMAIL_AWSSES_* or EMAIL_RESEND_* is required
+      # Either EMAIL_MAILGUN_* or EMAIL_SMTP_* or EMAIL_AWSSES_* is required
       ###
 
       # EMAIL_MAILGUN_API: key-yourkeygoeshere
@@ -79,8 +79,6 @@ services:
       # EMAIL_AWSSES_REGION: us-east-1
       # EMAIL_AWSSES_ACCESS_KEY_ID: youraccesskeygoeshere
       # EMAIL_AWSSES_SECRET_ACCESS_KEY: yoursecretkeygoeshere
-
-      # EMAIL_RESEND_API: resend-api-key
 ```
 
 Pay close attention to the BASE_URL field; ensure it is set to the correct public URL and that the HOST is correct (https/http).
