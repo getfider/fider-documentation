@@ -133,6 +133,10 @@ When exposing Fider to the internet, it's strongly recommended to setup HTTPS. T
 
 ##### I have submitted the installation form, but I haven't got any confirmation email
 
-Start with your Spam folder, it shouldn't be there, but just be sure about that first. If not, it's highly likely that you either input the wrong email or your email configurations are invalid. When this happens, you'll notice that you can't fill in that form again as you'll be presented with a 404 page. This page will only go away when you click the confirmation link that Fider sends.
+Ok so obvious things first - check your spam folders, in case it's gone there. If it's not there, check your fider logs for any sign of errors. It's likely something is wrong with your email configuration.
 
-To solve this you'll need to log into your Postgres Database and run `TRUNCATE TABLE tenants RESTART IDENTITY CASCADE;`. This command will purge all the data from Fider, thus making the installation page available again. You may now change your email configurations and try again. You can repeat this as much as you need.
+You can resend the confirmation email now, so once you check your email config and restart, then you can use that to resnd the code.
+
+If however it's all looking a bit pear shaped and you want to reset everything and start again, the easiest way to do that is to blitz your tenant from the dabase with this SQL:
+
+`TRUNCATE TABLE tenants RESTART IDENTITY CASCADE;`.
