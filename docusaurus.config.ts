@@ -107,10 +107,6 @@ const config: Config = {
               label: "Bluesky",
               href: "https://bsky.app/profile/fider.io",
             },
-            {
-              label: "X",
-              href: "https://x.com/getfider",
-            },
           ],
         },
         {
