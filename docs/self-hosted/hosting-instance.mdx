@@ -85,6 +85,8 @@ Pay close attention to the BASE_URL field; ensure it is set to the correct publi
 
 The Docker Compose file above defines two services: `db` and `app`. In case you're using an external Postgres database, remove the db service and replace `DATABASE_URL` environment variable with your connection string.
 
+For multiple feedback boards on one deployment, see [Multi-Tenant Hosting](/multi-tenant).
+
 ##### Step 2: Pull the images and run them
 
 Open your favorite terminal, navigate to `/var/fider` and run
