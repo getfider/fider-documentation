@@ -1,0 +1,144 @@
+---
+sidebar_position: 5
+title: Multi-Tenant Hosting
+description: Run one Fider instance with multiple feedback boards
+slug: /multi-tenant
+---
+
+By default, a self-hosted Fider installation runs in **single-tenant** mode: one feedback board at a single URL configured with `BASE_URL`. This is the right choice for most deployments.
+
+**Multi-tenant** mode runs one Fider process and one PostgreSQL database, but serves many isolated feedback boards. Each board has its own subdomain, for example `acme.feedback.example.com` and `product.feedback.example.com`. This is useful when you want separate boards for different teams, products, or languages without running separate Fider deployments.
+
+Multi-tenancy is a supported, existing feature. It requires specific environment variables, DNS configuration, and a domain that supports wildcard subdomains.
+
+### Prerequisites
+
+Before enabling multi-tenant mode, make sure you have:
+
+- A **domain name you control** (for example `feedback.example.com`).
+- **Wildcard DNS** pointing to your Fider host (for example `*.feedback.example.com`), or individual DNS records for each subdomain you plan to use.
+- A **reverse proxy or load balancer** that forwards requests to Fider while preserving the original `Host` header. Fider resolves tenants from the hostname on each request.
+- A working **email sender** (SMTP, Mailgun, or AWS SES), as tenant signup relies on email verification.
+
+Platform default hostnames that do not support wildcard subdomains are not suitable for multi-tenant mode. For example, the default hostname provided by Azure App Service (`*.azurewebsites.net`) cannot host arbitrary tenant subdomains such as `acme.my-app.azurewebsites.net`.
+
+### Configuration
+
+Multi-tenant mode is enabled with two environment variables. Add them to your Fider container instead of `BASE_URL`:
+
+```yaml
+services:
+  app:
+    restart: always
+    image: getfider/fider:stable
+    ports:
+      - "80:3000"
+    environment:
+      HOST_MODE: multi
+      HOST_DOMAIN: feedback.example.com
+
+      DATABASE_URL: postgres://fider:password@db:5432/fider?sslmode=disable
+      JWT_SECRET: VERY_STRONG_SECRET_SHOULD_BE_USED_HERE
+      EMAIL_NOREPLY: noreply@example.com
+
+      # EMAIL_SMTP_* or EMAIL_MAILGUN_* or EMAIL_AWSSES_* (required)
+      EMAIL_SMTP_HOST: smtp.example.com
+      EMAIL_SMTP_PORT: 587
+```
+
+Important notes:
+
+- `HOST_DOMAIN` is the domain name **only**. Do not include `https://` or a trailing slash. Use `feedback.example.com`, not `https://feedback.example.com/`.
+- Do **not** set `BASE_URL` in multi-tenant mode. In single-tenant mode, `BASE_URL` is required and `HOST_DOMAIN` must not be set. Fider will refuse to start if both are configured incorrectly.
+- Restart Fider after changing these variables.
+
+You only need **one** Fider application connected to the database. Running multiple Fider containers against the same database without multi-tenant mode enabled will not create separate tenants; both instances will show the same data.
+
+### URL layout
+
+Once multi-tenant mode is enabled, URLs follow this pattern:
+
+| URL | Purpose |
+| --- | --- |
+| `https://login.{HOST_DOMAIN}/signup` | Create a new feedback board (tenant) |
+| `https://{subdomain}.{HOST_DOMAIN}/` | A tenant's feedback board |
+| `https://{custom-domain}/` | Optional per-tenant custom domain (configured in site settings) |
+
+For `HOST_DOMAIN=feedback.example.com`:
+
+- Signup: `https://login.feedback.example.com/signup`
+- A tenant named `acme`: `https://acme.feedback.example.com/`
+
+Visiting a subdomain that does not match any tenant returns a **Page not found** response. This is expected. The root domain (`feedback.example.com`) is not a tenant URL unless you configure it explicitly.
+
+The `login` subdomain is reserved for tenant signup and OAuth flows. It is not a regular feedback board.
+
+### Creating a tenant
+
+The supported way to create a new tenant is through the signup page:
+
+1. Open `https://login.{HOST_DOMAIN}/signup`.
+2. Sign in with OAuth or enter your name and email address.
+3. Choose a name and subdomain for the new board. Fider checks subdomain availability as you type.
+4. If you signed up with email, confirm your address using the verification link sent to your inbox. The board remains in a pending state until verification is complete.
+
+Subdomain rules:
+
+- Between 3 and 40 characters.
+- Letters, numbers, and hyphens only. Must start and end with a letter or number.
+- Certain names are reserved and cannot be used, including `login`, `signup`, `admin`, `api`, `www`, and others.
+
+Manual database changes to create tenants are not documented here and are not the supported workflow.
+
+### Custom domains
+
+Each tenant can optionally use a custom domain instead of its subdomain URL. This is configured per board in **Site Settings → General → Custom Domain**.
+
+To set up a custom domain:
+
+1. Enter the domain (for example `feedback.yourcompany.com`) in site settings.
+2. Add a DNS record as shown in the admin UI:
+   - For most domains: a **CNAME** from your custom domain to `{subdomain}.{HOST_DOMAIN}`.
+   - For apex domains (for example `yourcompany.com`): an **ALIAS** or equivalent record, depending on your DNS provider.
+3. Allow time for DNS propagation (up to 72 hours in some cases).
+
+Custom domain settings are only available in multi-tenant mode.
+
+### Restricting new tenant signups
+
+By default, anyone who can reach `https://login.{HOST_DOMAIN}/signup` can create a new feedback board. To disable tenant signup:
+
+```
+SIGNUP_DISABLED=true
+```
+
+When signup is disabled, the signup page and tenant creation API return **404 Not Found**.
+
+For additional control, you can restrict access at your reverse proxy or web server (for example by blocking the `login` subdomain or the `/signup` path). The exact configuration depends on your infrastructure.
+
+### Single-tenant vs multi-tenant
+
+| | Single-tenant (default) | Multi-tenant |
+| --- | --- | --- |
+| Environment | `BASE_URL=https://feedback.example.com` | `HOST_MODE=multi`, `HOST_DOMAIN=feedback.example.com` |
+| Number of boards | One | Many |
+| First-time setup | `/signup` on `BASE_URL` | `https://login.{HOST_DOMAIN}/signup` |
+| Tenant resolution | First tenant in the database | Hostname (subdomain or custom domain) |
+| Custom domain UI | Not shown | Available in site settings |
+| Site deletion (Danger Zone) | Not available | Available to the account owner |
+| Roadmap and moderation | Available on self-hosted installs | In multi-tenant mode, these features follow the tenant's plan flags (same as Fider Cloud) |
+
+### Common mistakes
+
+**Running two Fider instances on one database.** Multi-tenancy requires a single application with `HOST_MODE=multi`. Two separate deployments sharing a database will not isolate tenants.
+
+**Including a URL scheme in `HOST_DOMAIN`.** Use `feedback.example.com`, not `https://feedback.example.com`.
+
+**Editing `tenants.subdomain` in the database without DNS.** Changing a subdomain in PostgreSQL does not create DNS records. The new subdomain must resolve to your Fider host.
+
+**Expecting `login.*` to work in single-tenant mode.** The `login` subdomain and signup redirect only apply when `HOST_MODE=multi`.
+
+**Using a platform hostname without wildcard subdomain support.** If your hosting provider assigns a fixed hostname (for example a default cloud app URL), you typically cannot add arbitrary tenant subdomains under it. Use a custom domain with wildcard DNS instead.
+
+
+For the default single-board installation, see [Hosting on Docker](/hosting-instance).
