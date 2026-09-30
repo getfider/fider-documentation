@@ -9,11 +9,11 @@ This is the documentation website for [Fider](https://github.com/getfider/fider)
 ## Common Commands
 
 ```bash
-yarn install    # Install dependencies
-yarn start      # Start dev server with hot reload
-yarn build      # Build for production (outputs to ./build)
-yarn typecheck  # Run TypeScript type checking
-yarn serve      # Serve the production build locally
+npm install        # Install dependencies
+npm start          # Start dev server with hot reload
+npm run build      # Build for production (outputs to ./build)
+npm run typecheck  # Run TypeScript type checking
+npm run serve      # Serve the production build locally
 ```
 
 ## Architecture
@@ -24,8 +24,6 @@ yarn serve      # Serve the production build locally
   - `self-hosted/` - Hosting guides (AWS, Azure, Heroku, Coolify)
 - **src/** - React components and styles
   - `css/custom.css` - Global CSS overrides (Infima variables)
-  - `components/` - Reusable React components
-  - `pages/` - Custom pages outside docs
 - **static/** - Static assets (images, favicon)
 - **docusaurus.config.ts** - Main Docusaurus configuration
 - **sidebars.ts** - Sidebar structure (auto-generated from docs folder)
