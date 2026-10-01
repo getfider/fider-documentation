@@ -10,6 +10,10 @@ title: Comments
 - <a href="#add-comment">Add a Comment</a>
 - <a href="#edit-comment">Edit a Comment</a>
 - <a href="#delete-comment">Delete a Comment</a>
+- <a href="#toggle-reaction">Toggle a Reaction</a>
+- <a href="#moderate-comment">Moderate a Comment</a>
+
+Comments that are waiting for moderation are only returned to Collaborators, Administrators and the user who created them.
 
 <h4 id="list-comments">List Comments</h4>
 
@@ -18,6 +22,8 @@ title: Comments
 ```
 GET /api/v1/posts/{number}/comments
 ```
+
+Comments are returned newest first.
 
 **Parameters**
 
@@ -34,35 +40,58 @@ GET <baseURL>/api/v1/posts/47/comments
 **Response**
 
 ```
+200 OK
+---
 [
   {
-    "id":67,
-    "content":"Sounds good, right?",
-    "createdAt":"2017-07-26T04:15:22.72261Z",
-    "user":{
-      "id":54,
-      "name":"Michael Jackson",
-      "role":"visitor"
-    }
+    "id": 68,
+    "content": "Definitely. Just do it!",
+    "createdAt": "2017-07-26T06:49:03.951383Z",
+    "user": {
+      "id": 23,
+      "name": "Darth Vader",
+      "role": "visitor",
+      "avatarURL": "https://feedback.yourcompany.com/static/avatars/letter/23/Darth%20Vader",
+      "status": "active",
+      "isTrusted": false
+    },
+    "editedAt": "2018-09-29T17:37:59.516909Z",
+    "editedBy": {
+      "id": 1,
+      "name": "Jon Snow",
+      "role": "administrator",
+      "avatarURL": "https://feedback.yourcompany.com/static/avatars/letter/1/Jon%20Snow",
+      "status": "active",
+      "isTrusted": false
+    },
+    "reactionCounts": [
+      {
+        "emoji": "👍",
+        "count": 3,
+        "includesMe": true
+      }
+    ],
+    "isApproved": true
   },
   {
-    "id":68,
-    "content":"Definitely. Just do it!",
-    "createdAt":"2017-07-26T06:49:03.951383Z",
-    "user":{
-      "id":23,
-      "name":"Darth Vader",
-      "role":"visitor"
+    "id": 67,
+    "content": "Sounds good, right?",
+    "createdAt": "2017-07-26T04:15:22.72261Z",
+    "user": {
+      "id": 54,
+      "name": "Michael Jackson",
+      "role": "visitor",
+      "avatarURL": "https://feedback.yourcompany.com/static/avatars/letter/54/Michael%20Jackson",
+      "status": "active",
+      "isTrusted": false
     },
-    "editedAt":"2018-09-29T17:37:59.516909Z",
-    "editedBy":{
-      "id":1,
-      "name":"Jon Snow",
-      "role":"administrator"
-    }
+    "attachments": ["attachments/6a1b0e2f4c...-screenshot.png"],
+    "isApproved": true
   }
 ]
 ```
+
+`editedAt` and `editedBy` are only present on comments that have been edited. `attachments` (the keys of the attached images) and `reactionCounts` are only present when the comment has any.
 
 <h4 id="get-comment">Get a Comment</h4>
 
@@ -76,7 +105,7 @@ GET /api/v1/posts/{number}/comments/{id}
 
 | Name     | Type     | Description                                          |
 | -------- | -------- | ---------------------------------------------------- |
-| `number` | `number` | **Required.** The number of the post to retrieve.    |
+| `number` | `number` | **Required.** The number of the post.                |
 | `id`     | `number` | **Required.** The id of the comment to be retrieved. |
 
 **Example**
@@ -87,24 +116,33 @@ GET <baseURL>/api/v1/posts/47/comments/68
 
 **Response**
 
+This endpoint doesn't return `attachments` or `reactionCounts`.
+
 ```
 200 OK
 ---
 {
-  "id":68,
-  "content":"Definitely. Just do it!",
-  "createdAt":"2017-07-26T06:49:03.951383Z",
-  "user":{
-    "id":23,
-    "name":"Darth Vader",
-    "role":"visitor"
+  "id": 68,
+  "content": "Definitely. Just do it!",
+  "createdAt": "2017-07-26T06:49:03.951383Z",
+  "user": {
+    "id": 23,
+    "name": "Darth Vader",
+    "role": "visitor",
+    "avatarURL": "https://feedback.yourcompany.com/static/avatars/letter/23/Darth%20Vader",
+    "status": "active",
+    "isTrusted": false
   },
-  "editedAt":"2018-09-29T17:37:59.516909Z",
-  "editedBy":{
-    "id":1,
-    "name":"Jon Snow",
-    "role":"administrator"
-  }
+  "editedAt": "2018-09-29T17:37:59.516909Z",
+  "editedBy": {
+    "id": 1,
+    "name": "Jon Snow",
+    "role": "administrator",
+    "avatarURL": "https://feedback.yourcompany.com/static/avatars/letter/1/Jon%20Snow",
+    "status": "active",
+    "isTrusted": false
+  },
+  "isApproved": true
 }
 ```
 
@@ -118,10 +156,11 @@ POST /api/v1/posts/{number}/comments
 
 **Parameters**
 
-| Name      | Type     | Description                                              |
-| --------- | -------- | -------------------------------------------------------- |
-| `number`  | `number` | **Required.** The number of the post to add the comment. |
-| `content` | `string` | **Required.** The content of the comment.                |
+| Name          | Type              | Description                                                                                                   |
+| ------------- | ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| `number`      | `number`          | **Required.** The number of the post to add the comment.                                                      |
+| `content`     | `string`          | **Required.** The content of the comment, in Markdown. Maximum 4000 characters.                               |
+| `attachments` | `array of object` | Up to 2 images to attach to the comment. See <a href="/api/posts#attachments">Attachments</a>.                          |
 
 **Example**
 
@@ -139,14 +178,14 @@ POST <baseURL>/api/v1/posts/47/comments
 200 OK
 ---
 {
-  "id":5675
+  "id": 5675
 }
 ```
 
 <h4 id="edit-comment">Edit a Comment</h4>
 
 - **Authentication:** Required
-- **Required Role:** Collaborator or Administrator.
+- **Required Role:** Collaborator or Administrator. The author of the comment can also edit it.
 
 ```
 PUT /api/v1/posts/{number}/comments/{id}
@@ -154,16 +193,17 @@ PUT /api/v1/posts/{number}/comments/{id}
 
 **Parameters**
 
-| Name      | Type     | Description                                                  |
-| --------- | -------- | ------------------------------------------------------------ |
-| `number`  | `number` | **Required.** The number of the post that has given comment. |
-| `id`      | `number` | **Required.** The id of the comment to be edited.            |
-| `content` | `string` | **Required.** The new content of the comment.                |
+| Name          | Type              | Description                                                                                                 |
+| ------------- | ----------------- | ----------------------------------------------------------------------------------------------------------- |
+| `number`      | `number`          | **Required.** The number of the post that has given comment.                                                |
+| `id`          | `number`          | **Required.** The id of the comment to be edited.                                                           |
+| `content`     | `string`          | **Required.** The new content of the comment, in Markdown. Maximum 4000 characters.                         |
+| `attachments` | `array of object` | Images to add or remove. A comment can have up to 2 images. See <a href="/api/posts#attachments">Attachments</a>.     |
 
 **Example**
 
 ```
-POST <baseURL>/api/v1/posts/47/comments/5675
+PUT <baseURL>/api/v1/posts/47/comments/5675
 ---
 {
   "content": "Agreed, we need to act on this as soon as possible"
@@ -181,7 +221,7 @@ POST <baseURL>/api/v1/posts/47/comments/5675
 <h4 id="delete-comment">Delete a Comment</h4>
 
 - **Authentication:** Required
-- **Required Role:** Collaborator or Administrator.
+- **Required Role:** Collaborator or Administrator. The author of the comment can also delete it.
 
 ```
 DELETE /api/v1/posts/{number}/comments/{id}
@@ -192,12 +232,89 @@ DELETE /api/v1/posts/{number}/comments/{id}
 | Name     | Type     | Description                                                  |
 | -------- | -------- | ------------------------------------------------------------ |
 | `number` | `number` | **Required.** The number of the post that has given comment. |
-| `id`     | `number` | **Required.** The id of the comment to be edited.            |
+| `id`     | `number` | **Required.** The id of the comment to be deleted.           |
 
 **Example**
 
 ```
 DELETE <baseURL>/api/v1/posts/47/comments/5675
+```
+
+**Response**
+
+```
+200 OK
+---
+{}
+```
+
+<h4 id="toggle-reaction">Toggle a Reaction</h4>
+
+- **Authentication:** Required
+
+Adds a reaction to a comment on behalf of the authenticated user, or removes it if the user has already reacted with the same emoji.
+
+```
+POST /api/v1/posts/{number}/comments/{id}/reactions/{reaction}
+```
+
+**Parameters**
+
+| Name       | Type     | Description                                                                                                                         |
+| ---------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `number`   | `number` | **Required.** The number of the post that has given comment.                                                                        |
+| `id`       | `number` | **Required.** The id of the comment to react to.                                                                                    |
+| `reaction` | `string` | **Required.** The emoji, URL encoded. Possible values are 👍, 👎, 😄, 🎉, 😕, ❤️, 🚀 and 👀.                                       |
+
+**Example**
+
+```
+POST <baseURL>/api/v1/posts/47/comments/5675/reactions/%F0%9F%91%8D
+```
+
+**Response**
+
+`added` is `true` when the reaction was added and `false` when it was removed.
+
+```
+200 OK
+---
+{
+  "added": true
+}
+```
+
+<h4 id="moderate-comment">Moderate a Comment</h4>
+
+- **Authentication:** Required
+- **Required Role:** Administrator
+
+Approves or declines a comment that is waiting for moderation. Moderation is available on self-hosted instances and on Fider Cloud Pro plans. On other plans these endpoints return `403 Forbidden`.
+
+```
+POST /api/v1/admin/moderation/comments/{id}/approve
+POST /api/v1/admin/moderation/comments/{id}/approve-and-verify
+POST /api/v1/admin/moderation/comments/{id}/decline
+POST /api/v1/admin/moderation/comments/{id}/decline-and-block
+```
+
+| Action               | Description                                                                                     |
+| -------------------- | ----------------------------------------------------------------------------------------------- |
+| `approve`            | Approves the comment, making it visible to everyone.                                            |
+| `approve-and-verify` | Approves the comment and marks its author as trusted, so their future content skips moderation. |
+| `decline`            | Deletes the comment.                                                                            |
+| `decline-and-block`  | Deletes the comment and blocks its author.                                                      |
+
+**Parameters**
+
+| Name | Type     | Description                                         |
+| ---- | -------- | --------------------------------------------------- |
+| `id` | `number` | **Required.** The id of the comment to be moderated. |
+
+**Example**
+
+```
+POST <baseURL>/api/v1/admin/moderation/comments/5675/approve
 ```
 
 **Response**

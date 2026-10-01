@@ -26,49 +26,44 @@ That will set you up with a fider app instance, and also a postgres database whi
 
 ##### Step 2: Configure your setup as required.
 
-If you click on "Edit Compose file" in coolify, you'll see the docker compose file that is going to be deployed on your server. It looks like this:
+If you click on "Edit Compose file" in coolify, you'll see the docker compose file that is going to be deployed on your server. At the time of writing, it looks like this:
 
-```
+```yaml
 services:
   fider:
-    image: 'getfider/fider:stable'
+    image: getfider/fider:stable
     environment:
-      - SERVICE_FQDN_FIDER_3000
-      - BASE_URL=$SERVICE_FQDN_FIDER_3000
-      - 'DATABASE_URL=postgres://$SERVICE_USER_POSTGRES:$SERVICE_PASSWORD_POSTGRES@database:5432/fider?sslmode=disable'
+      - SERVICE_URL_FIDER_3000
+      - BASE_URL=$SERVICE_URL_FIDER
+      - DATABASE_URL=postgres://$SERVICE_USER_POSTGRES:$SERVICE_PASSWORD_POSTGRES@database:5432/fider?sslmode=disable
       - JWT_SECRET=$SERVICE_PASSWORD_64_FIDER
-      - 'EMAIL_NOREPLY=${EMAIL_NOREPLY:-noreply@example.com}'
+      - EMAIL_NOREPLY=${EMAIL_NOREPLY:-noreply@example.com}
       - EMAIL_MAILGUN_API=$EMAIL_MAILGUN_API
       - EMAIL_MAILGUN_DOMAIN=$EMAIL_MAILGUN_DOMAIN
       - EMAIL_MAILGUN_REGION=$EMAIL_MAILGUN_REGION
-      - 'EMAIL_SMTP_HOST=${EMAIL_SMTP_HOST:-smtp.mailgun.com}'
-      - 'EMAIL_SMTP_PORT=${EMAIL_SMTP_PORT:-587}'
-      - 'EMAIL_SMTP_USERNAME=${EMAIL_SMTP_USERNAME:-postmaster@mailgun.com}'
+      - EMAIL_SMTP_HOST=${EMAIL_SMTP_HOST:-smtp.mailgun.com}
+      - EMAIL_SMTP_PORT=${EMAIL_SMTP_PORT:-587}
+      - EMAIL_SMTP_USERNAME=${EMAIL_SMTP_USERNAME:-postmaster@mailgun.com}
       - EMAIL_SMTP_PASSWORD=$EMAIL_SMTP_PASSWORD
       - EMAIL_SMTP_ENABLE_STARTTLS=$EMAIL_SMTP_ENABLE_STARTTLS
       - EMAIL_AWSSES_REGION=$EMAIL_AWSSES_REGION
       - EMAIL_AWSSES_ACCESS_KEY_ID=$EMAIL_AWSSES_ACCESS_KEY_ID
       - EMAIL_AWSSES_SECRET_ACCESS_KEY=$EMAIL_AWSSES_SECRET_ACCESS_KEY
     healthcheck:
-      test:
-        - CMD
-        - /app/fider
-        - ping
+      test: ["CMD", "/app/fider", "ping"]
       interval: 2s
       timeout: 10s
       retries: 10
   database:
-    image: 'postgres:12'
+    image: postgres:12
     volumes:
-      - 'pg_data:/var/lib/postgresql/data'
+      - pg_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=$SERVICE_USER_POSTGRES
       - POSTGRES_PASSWORD=$SERVICE_PASSWORD_POSTGRES
-      - 'POSTGRES_DB=${POSTGRES_DB:-fider}'
+      - POSTGRES_DB=${POSTGRES_DB:-fider}
     healthcheck:
-      test:
-        - CMD-SHELL
-        - 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}'
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       interval: 5s
       timeout: 20s
       retries: 10
@@ -76,16 +71,26 @@ services:
 
 Now this should be enough to get running without any changes, simply deploy in coolify, and then open the link to your fider instance, as configured by coolify.
 
+The template uses PostgreSQL 12, which no longer receives security updates. For a new installation, you can change the `database` image to a newer version such as `postgres:17` before you deploy for the first time. Don't change it on an existing installation: PostgreSQL can't read data files from a different major version, so you'd need to dump and restore your database first.
+
 Chances are you'll probably need / want to change the URL in some way - e.g. for me just now my newly created instance has a URL that includes the UUID of the instance that coolify created. That's pretty simple to do in coolify too - just click on "settings" for the fider service, and in there you can change the URL that coolify is using for you. You might need to restart once you've changed this.
+
+`BASE_URL` is set from this URL automatically. Make sure it starts with `https://`, because Fider uses `BASE_URL` to build every link, including the sign-in links it emails.
 
 ##### Step 3: Configure your email provider.
 
-Fider isn't going to work very well without a way to send emails. Fiders various email options are [listed here](/hosting-instance#installing-and-running). For example in my own instance, I've configured SMTP with these 3 environment variables:
+Fider isn't going to work very well without a way to send emails. You can set the email environment variables in the "Environment Variables" section of the fider service in coolify. Fider supports SMTP, Mailgun and Amazon SES, and all the options are [listed in the configuration reference](/hosting-instance#email).
+
+The template defaults to SMTP. For example, to send emails through your own SMTP server:
 
 ```
-EMAIL_SMTP_ENABLE_STARTTLS=false
+EMAIL_NOREPLY=noreply@yourdomain.com
+EMAIL_SMTP_HOST=smtp.yourdomain.com
+EMAIL_SMTP_PORT=587
+EMAIL_SMTP_USERNAME=postmaster@yourdomain.com
 EMAIL_SMTP_PASSWORD=nottellingyou
-EMAIL_SMTP_USERNAME=postmaster@somewhere.com
 ```
+
+If your SMTP server uses port 465, set `EMAIL_SMTP_PORT=465` and add `EMAIL_SMTP_ENABLE_IMPLICIT_TLS=true` to the `environment` section of the compose file, as the template doesn't include it. To use Mailgun or Amazon SES instead, fill in the `EMAIL_MAILGUN_*` or `EMAIL_AWSSES_*` variables. Fider uses Mailgun when `EMAIL_MAILGUN_API` is set, and Amazon SES when `EMAIL_AWSSES_ACCESS_KEY_ID` is set.
 
 That's pretty much all there is to it !

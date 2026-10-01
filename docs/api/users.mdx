@@ -17,10 +17,21 @@ title: Users
 GET /api/v1/users
 ```
 
+Returns a page of users, ordered by role (Administrators first) and then by name. Deleted users are not returned.
+
+**Parameters**
+
+| Name    | Type      | Description                                                                                                        |
+| ------- | --------- | ------------------------------------------------------------------------------------------------------------------ |
+| `query` | `string`  | Only return users whose name or email contains this text (case-insensitive).                                       |
+| `roles` | `string`  | The roles to filter by. Separate multiple roles by `,`. Possible values are `visitor`, `collaborator` and `administrator`. |
+| `page`  | `integer` | The page to return, starting at 1. Default: 1                                                                      |
+| `limit` | `integer` | The number of users per page. Default: 10                                                                          |
+
 **Example**
 
 ```
-GET <baseURL>/api/v1/users
+GET <baseURL>/api/v1/users?roles=administrator,collaborator&page=1&limit=20
 ```
 
 **Response**
@@ -28,30 +39,35 @@ GET <baseURL>/api/v1/users
 ```
 200 OK
 ---
-[
-  {
-    "id": 3,
-    "name": "Arya Stark",
-    "role": "administrator",
-    "status": "active",
-  },
-  {
-    "id": 5,
-    "name": "Jon Snow",
-    "role": "visitor",
-    "status": "active"
-  },
-  {
-    "id": 24,
-    "name": "The Queen",
-    "role": "collaborator",
-    "status": "blocked"
-  },
-  {
-    ...
-  }
-]
+{
+  "users": [
+    {
+      "id": 3,
+      "name": "Arya Stark",
+      "role": "administrator",
+      "avatarURL": "https://feedback.yourcompany.com/static/avatars/gravatar/3/Arya%20Stark",
+      "status": "active",
+      "isTrusted": false,
+      "email": "arya.stark@got.com"
+    },
+    {
+      "id": 24,
+      "name": "The Queen",
+      "role": "collaborator",
+      "avatarURL": "https://feedback.yourcompany.com/static/avatars/letter/24/The%20Queen",
+      "status": "blocked",
+      "isTrusted": false,
+      "email": "queen@got.com"
+    }
+  ],
+  "totalCount": 2,
+  "totalPages": 1,
+  "page": 1,
+  "limit": 20
+}
 ```
+
+`status` is either `active` or `blocked`. `isTrusted` is `true` for users whose content skips moderation.
 
 <h4 id="create-user">Create a User</h4>
 
@@ -62,17 +78,19 @@ GET <baseURL>/api/v1/users
 POST /api/v1/users
 ```
 
-The Create User API will only create a new user if it cannot find an existing user with given email or reference ID. If the user already exists on Fider, the ID of the existing user is returned instead of creating a new user.
+The Create User API will only create a new user if it cannot find an existing user with given reference or email (in that order). If the user already exists on Fider, the ID of the existing user is returned instead of creating a new user. New users are created with the `visitor` role.
 
-The ID returned by this API can be used to impersonate that user. Read more about <a href="#impersonation">impersonation</a>.
+When a `reference` is sent and the user doesn't have one yet, it is linked to the user, so the user can later be found by that reference.
+
+The ID returned by this API can be used to impersonate that user. Read more about <a href="/api/authentication#impersonation">impersonation</a>.
 
 **Parameters**
 
-| Name        | Type     | Description                                 |
-| ----------- | -------- | ------------------------------------------- |
-| `name`      | `string` | **Required.** The name of the user.         |
-| `email`     | `string` | The email of the user.                      |
-| `reference` | `string` | A unique ID for the user in another system. |
+| Name        | Type     | Description                                                                                               |
+| ----------- | -------- | --------------------------------------------------------------------------------------------------------- |
+| `name`      | `string` | **Required.** The name of the user. Maximum 100 characters.                                               |
+| `email`     | `string` | The email of the user. Either `email` or `reference` is required.                                         |
+| `reference` | `string` | A unique ID for the user in another system. Maximum 100 characters. Either `email` or `reference` is required. |
 
 **Example**
 

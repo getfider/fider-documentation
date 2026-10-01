@@ -5,61 +5,145 @@ slug: /how-to-enable-ssl
 description: How to enable SSL/TLS on your Fider instance
 ---
 
-There are three options on how to configure SSL/TLS on your Fider instance.
+There are three ways to serve Fider over HTTPS:
+
+1. [Put a reverse proxy in front of Fider](#1-https-with-a-reverse-proxy) (recommended for most setups)
+2. [Let Fider get certificates from Let's Encrypt](#2-automatic-https-with-lets-encrypt)
+3. [Use your own certificate](#3-https-with-your-own-certificate)
+
+Whichever you choose, set `BASE_URL` to your `https://` address, for example `BASE_URL: https://feedback.example.com`. Fider uses it to build links, including the sign-in links it emails.
+
+The examples below build on the `docker-compose.yml` from [Hosting on Docker](/hosting-instance).
 
 ### 1. HTTPS with a Reverse Proxy
 
-This is often the most popular option as multiple reverse proxy supports TLS termination and various other useful features.
-It's beyond the scope of this page to explain how to set it up, but these are the most popular options:
+This is the most popular option. The reverse proxy handles HTTPS and passes requests on to Fider over plain HTTP. It's also the easiest option if you run other sites on the same server.
 
-- https://traefik.io
-- https://caddyserver.com
-- https://nginx.com
+Popular choices are [Caddy](https://caddyserver.com), [Traefik](https://traefik.io) and [nginx](https://nginx.org).
 
-### 2. Automatic HTTPS with Let's Encrypt
+Whichever proxy you use, it must:
 
-Fider integrates with [Let's Encrypt](https://letsencrypt.org/) natively, so you can have TLS without installing anything else or buying your own certificate.
+- **Send the `X-Forwarded-Proto: https` header.** Fider uses it to know the visitor is on HTTPS, and marks its cookies as secure only when it is present. Caddy and Traefik send it automatically; nginx needs it configured.
+- **Allow request bodies of at least 20 MB.** Images are uploaded as part of the request, up to 5 MB each. nginx limits requests to 1 MB by default, which makes image uploads fail.
 
-To enable it:
+Don't set `SSL_AUTO`, `SSL_CERT` or `SSL_CERT_KEY` when using a reverse proxy.
 
-1. Ensure your app is NOT behind a proxy.
-2. Add the SSL_AUTO to your docker-compose.yml
-3. Restart your application.
+##### Example: Caddy
+
+Caddy gets certificates from Let's Encrypt automatically. Create a `/var/fider/Caddyfile`:
 
 ```
-version: '2'
+feedback.example.com {
+    reverse_proxy app:3000
+}
+```
+
+Then add Caddy to your `docker-compose.yml`, and remove the `ports:` section from the `app` service so Fider is only reachable through Caddy:
+
+```yaml
 services:
   db:
     ...
   app:
+    ...
+    environment:
+      BASE_URL: https://feedback.example.com
+      ...
+  caddy:
+    image: caddy:2
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/fider/Caddyfile:/etc/caddy/Caddyfile
+      - /var/fider/caddy_data:/data
+```
+
+##### Example: nginx
+
+If nginx runs on the host and Fider's port is published as `3000:3000`, a minimal server block looks like this:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name feedback.example.com;
+
+    ssl_certificate     /etc/ssl/certs/feedback.example.com.crt;
+    ssl_certificate_key /etc/ssl/private/feedback.example.com.key;
+
+    client_max_body_size 20m;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+### 2. Automatic HTTPS with Let's Encrypt
+
+Fider can get and renew certificates from [Let's Encrypt](https://letsencrypt.org/) by itself, so you don't need a proxy or a certificate of your own.
+
+Before you start:
+
+- Fider must **not** be behind a proxy. It needs to receive traffic on ports 80 and 443 directly.
+- Your domain's DNS must already point to your server, and ports 80 and 443 must be open in your firewall.
+
+Then update your `docker-compose.yml` and restart your application:
+
+```yaml
+services:
+  db:
+    ...
+  app:
+    ...
     ports:
       - "80:80"
       - "443:3000"
     environment:
-      ...
+      BASE_URL: https://feedback.example.com
       SSL_AUTO: "true"
+      ...
 ```
 
-It can take a few seconds on the initial request to generate a certificate, but after visiting your site, you'll should see the green lock and the certificate generated for you.
+Port 80 is used by Let's Encrypt to verify your domain, and to redirect visitors from HTTP to HTTPS. Fider serves HTTPS on its normal port (3000), which is published as 443.
 
-**NOTE**: You must enable firewall access on port 80 and 443. Fider will redirect all traffic from HTTP to HTTPS.
+The first request can take a few seconds while the certificate is generated. After that, you should see the padlock in your browser. Fider renews certificates automatically.
+
+Certificates are stored with Fider's other files (in the database by default, see `BLOB_STORAGE` in the [configuration reference](/hosting-instance#configuration-reference)), so they survive container restarts and upgrades.
+
+If a certificate can't be issued, check `docker compose logs app`. Fider waits 15 minutes before trying again for the same domain, to stay within Let's Encrypt's rate limits.
 
 ### 3. HTTPS with your own certificate
 
-You can also buy (or generate) a certificate and use it on Fider. Copy your `.crt` and `.key` files into `/var/fider/etc/`, add the following to your docker-compose.yml and restart your application.
+You can also buy (or generate) a certificate and use it in Fider:
 
-```
-version: '2'
+1. Copy your certificate and key files into `/var/fider/etc/`.
+2. Update your `docker-compose.yml` as below. `SSL_CERT` and `SSL_CERT_KEY` are file names relative to `/app/etc` inside the container.
+3. Restart your application.
+
+```yaml
 services:
   db:
     ...
   app:
+    ...
     ports:
       - "443:3000"
     environment:
-      ...
+      BASE_URL: https://feedback.example.com
       SSL_CERT: filename.crt
       SSL_CERT_KEY: filename.key
+      ...
     volumes:
       - /var/fider/etc:/app/etc
 ```
+
+If your certificate needs an intermediate chain, put the full chain in the `.crt` file, with your certificate first.
+
+Fider reads the certificate only at startup. When you renew it, replace the files and restart Fider.
+
+In this mode Fider only serves HTTPS, so visitors who type `http://` won't be redirected. If you need that redirect, use [a reverse proxy](#1-https-with-a-reverse-proxy) instead.

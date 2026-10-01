@@ -12,11 +12,11 @@ import CloudIstance from './_markdown-cloud-instance.mdx'
 
 ##### A [Heroku](https://www.heroku.com) account
 
-It's totally free to sign up, and will allow you to deploy your application for free on a small instance.
+Heroku no longer offers free dynos or free Postgres databases, so you'll need a paid plan for both. See [Heroku pricing](https://www.heroku.com/pricing) for details.
 
 ##### E-mail Sender
 
-You can choose between a **SMTP Server** or a **[Mailgun](https://www.mailgun.com)** account.
+Fider cannot start without an email provider. You can choose between an **SMTP Server**, a **[Mailgun](https://www.mailgun.com)** account or **[Amazon SES](https://aws.amazon.com/ses/)**.
 
 ### Deploying your instance
 
@@ -28,7 +28,7 @@ Click the upper left button to create a new application. You will be prompted fo
 
 ##### Step 2: add a database to the application
 
-Under the **Resources** tab, in the **Add-ons** section, search and add the **Heroku Postgres** add-on to provide a database for your instance. When prompted for the Plan Name, you can leave the default **Hobby Dev - Free** selected and click **Provision**.
+Under the **Resources** tab, in the **Add-ons** section, search and add the **Heroku Postgres** add-on to provide a database for your instance. When prompted, choose a plan and click **Provision**. Fider requires PostgreSQL 12 or later.
 
 ![Provisioning the Postgresql database](./assets/heroku-postgres-add-on.png)
 
@@ -44,16 +44,18 @@ Repeat the operation with the **nodejs** buildpack. You should now have two buil
 
 In the **Config Vars** section of the **Settings** tab, click on **Reveal Config Vars** to display the current environment variables set on your application. You should already have one `DATABASE_URL` variable set. Don't touch it, it was automatically set by Heroku when you provisioned your database. You need to add some values for the Fider instance to work properly:
 
-- `BASE_URL`: https://yourapplicationame.herokuapp.com
-- `JWT_SECRET`: It's a secret key used for authentication tokens, you can generate a good secret using an online tool like [this one](https://www.allkeysgenerator.com/Random/Security-Encryption-Key-Generator.aspx) (take at least 512-bit for security).
+- `BASE_URL`: The public URL of your app, as shown in the **Domains** section of the **Settings** tab, for example `https://yourappname-1234567890ab.herokuapp.com`. Use your custom domain instead if you add one. It must start with `https://`.
+- `JWT_SECRET`: A secret key used to sign login sessions. Use a long random value, for example from [jwtsecrets.com](https://jwtsecrets.com).
 - `EMAIL_NOREPLY`: Set this variable to a no-reply address associated to your instance.
 - `EMAIL_MAILGUN_API`: Your Mailgun API key.
-- `EMAIL_MAILGUN_REGION`: Set to US or EU. Use capital letters only, defaults to US.
+- `EMAIL_MAILGUN_REGION`: `US` or `EU`, matching the region of your Mailgun account. Defaults to `US`.
 - `EMAIL_MAILGUN_DOMAIN`: Set this variable to your Mailgun domain.
 
 ![Application environment variables](./assets/heroku-env-variables.png)
 
-**If you're using plain SMTP to send emails**, you need to replace `MAILGUN_*` variables by the equivalent SMTP variables: `EMAIL_SMTP_HOST`, `EMAIL_SMTP_PORT`, `EMAIL_SMTP_USERNAME`,`EMAIL_SMTP_PASSWORD`.
+**If you're using SMTP**, replace the `EMAIL_MAILGUN_*` variables with `EMAIL_SMTP_HOST`, `EMAIL_SMTP_PORT`, `EMAIL_SMTP_USERNAME` and `EMAIL_SMTP_PASSWORD`. **If you're using Amazon SES**, replace them with `EMAIL_AWSSES_REGION`, `EMAIL_AWSSES_ACCESS_KEY_ID` and `EMAIL_AWSSES_SECRET_ACCESS_KEY`.
+
+See the [configuration reference](/hosting-instance#configuration-reference) for all the environment variables Fider supports. You don't need to set `PORT`, as Heroku sets it for you.
 
 ##### Step 5: deploy your application
 
@@ -61,10 +63,10 @@ The easiest way to deploy your application to Heroku is to connect your applicat
 
 ![Connecting your Github repository for deployment](./assets/heroku-github-connection.png)
 
-You can now deploy your application by clicking on the **Deploy Branch** button. Once your app is deployed successfully, you can access the app online by clicking the **View** button.
+You can now deploy your application by clicking on the **Deploy Branch** button. Fider creates its database tables automatically when it starts. Once your app is deployed successfully, you can access the app online by clicking the **View** button.
 
 ![Successfull deployment of your application](./assets/heroku-app-deployment.png)
 
-That's it! You should see the signup screen to create your Administrator account, and you can enjoy your free Fider instance and share it with your users.
+That's it! You should see the signup screen to create your Administrator account, and you can enjoy your Fider instance and share it with your users.
 
-**Reminder:** To keep your instance always up to date with latest features and fixes, update your fork every once in a while.
+**Reminder:** To keep your instance always up to date with latest features and fixes, update your fork every once in a while and deploy it again. Check the [release notes](https://github.com/getfider/fider/releases) for breaking changes before you do.
