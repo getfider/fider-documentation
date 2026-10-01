@@ -15,7 +15,9 @@ The **API v1** was introduced on Fider `v0.16.0`. Make sure you're running the l
 
 **Request**
 
-Allowed HTTP Verbs are GET, POST, PUT and DELETE. All data must be sent as JSON.
+Allowed HTTP Verbs are GET, POST, PUT and DELETE. Request bodies must be JSON and sent with the `Content-Type: application/json` header, otherwise the request is rejected.
+
+We recommend also sending `Accept: application/json` on every request. Without it, some error responses (such as `401`, `403`, `404` and `500`) are returned as HTML pages instead of JSON.
 
 Requests are sent to your Fider URL using the HTTP/HTTPS protocol.
 
@@ -26,13 +28,15 @@ Requests are sent to your Fider URL using the HTTP/HTTPS protocol.
 
 **Response**
 
-Every response will be encoded with `application/json` and one of the following status code.
+Successful responses are encoded as `application/json` and use one of the following status codes.
 
 | Status Code                     | Description                                                                                                                       |
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | 200 OK                          | Fider has accepted and processed your request, no error was encountered.                                                          |
-| 400 Bad Request                 | Something is incorrect with your request, it might be missing a parameter or have an invalid value. See **Error Messages** below. |
-| 403 Forbidden                   | API Key is not present or not allowed to perform the operation                                                                    |
+| 400 Bad Request                 | Something is incorrect with your request, it might be missing a parameter or have an invalid value. See **Error Messages** below. An invalid API Key also returns this status. |
+| 401 Unauthorized                | The endpoint requires authentication and no valid credentials were sent, or the authenticated user is blocked.                    |
+| 402 Payment Required            | The site is locked (Fider Cloud only) and is in read-only mode. Only operations that change data are blocked.                     |
+| 403 Forbidden                   | The authenticated user is not allowed to perform the operation, for example because it requires a different role.                 |
 | 404 Not Found                   | The resource you're looking for doesn't exist.                                                                                    |
 | <nobr>500 Internal Error</nobr> | This generally indicates a server-side problem on Fider and it cannot fulfill your request currently.                             |
 
@@ -45,11 +49,14 @@ Every `400 Bad Request` response contains a JSON payload with details of what we
   "errors": [
     {
       "field": "color",
-      "message": "'dark' is an invalid color."
+      "message": "Color is invalid."
     },
     {
-      "message": "A tag named 'suggestion' already exists."
+      "field": "name",
+      "message": "This tag name is already in use."
     }
   ]
 }
 ```
+
+When `Accept: application/json` is sent, the other error status codes return an empty JSON object (`{}`) as the body.

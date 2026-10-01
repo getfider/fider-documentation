@@ -10,7 +10,7 @@ title: Tags
 - <a href="#edit-tag">Edit a Tag</a>
 - <a href="#delete-tag">Delete a Tag</a>
 - <a href="#tag-post">Tag a Post</a>
-- <a href="#untag-vote">Untag a Post</a>
+- <a href="#untag-post">Untag a Post</a>
 
 <h4 id="list-tags">List Tags</h4>
 
@@ -20,7 +20,7 @@ title: Tags
 GET /api/v1/tags
 ```
 
-The list of tags returned by this endpoint depends on the role of the authenticated user. Private Tags are only returned for users with either `administrator` or `collaborator` role.
+The list of tags returned by this endpoint depends on the role of the authenticated user. Private Tags are only returned for users with either `administrator` or `collaborator` role. Tags are ordered by name.
 
 **Example**
 
@@ -62,11 +62,11 @@ POST /api/v1/tags
 
 **Parameters**
 
-| Name       | Type      | Description                                                   |
-| ---------- | --------- | ------------------------------------------------------------- |
-| `name`     | `string`  | **Required.** The display name of the tag.                    |
-| `color`    | `string`  | **Required.** The Hex color of the tag (without #).           |
-| `isPublic` | `boolean` | **Required.** true for public tags or false for private tags. |
+| Name       | Type      | Description                                                                                  |
+| ---------- | --------- | -------------------------------------------------------------------------------------------- |
+| `name`     | `string`  | **Required.** The display name of the tag. Maximum 30 characters, and it must be unique.     |
+| `color`    | `string`  | **Required.** The Hex color of the tag, as 6 characters without #.                           |
+| `isPublic` | `boolean` | `true` for public tags or `false` for private tags. Default: `false`                         |
 
 **Example**
 
@@ -103,14 +103,16 @@ POST <baseURL>/api/v1/tags
 PUT /api/v1/tags/{slug}
 ```
 
+All properties of the tag are replaced by the values sent. The slug of the tag is generated from its name, so changing the name also changes the slug.
+
 **Parameters**
 
-| Name       | Type      | Description                                                   |
-| ---------- | --------- | ------------------------------------------------------------- |
-| `slug`     | `string`  | **Required.** The slug of the tag to be edited.               |
-| `name`     | `string`  | **Required.** The display name of the tag.                    |
-| `color`    | `string`  | **Required.** The Hex color of the tag (without #).           |
-| `isPublic` | `boolean` | **Required.** true for public tags or false for private tags. |
+| Name       | Type      | Description                                                                                  |
+| ---------- | --------- | -------------------------------------------------------------------------------------------- |
+| `slug`     | `string`  | **Required.** The slug of the tag to be edited.                                              |
+| `name`     | `string`  | **Required.** The display name of the tag. Maximum 30 characters, and it must be unique.     |
+| `color`    | `string`  | **Required.** The Hex color of the tag, as 6 characters without #.                           |
+| `isPublic` | `boolean` | `true` for public tags or `false` for private tags. Default: `false`                         |
 
 **Example**
 
@@ -134,7 +136,7 @@ PUT <baseURL>/api/v1/tags/impact-big
   "name": "impact: small",
   "slug": "impact-small",
   "color": "063589",
-  "isPublic": false
+  "isPublic": true
 }
 ```
 
@@ -146,6 +148,8 @@ PUT <baseURL>/api/v1/tags/impact-big
 ```
 DELETE /api/v1/tags/{slug}
 ```
+
+The tag is also removed from all posts.
 
 **Parameters**
 
@@ -197,7 +201,7 @@ POST <baseURL>/api/v1/posts/47/tags/impact-big
 {}
 ```
 
-<h4 id="untag-vote">Untag a Post</h4>
+<h4 id="untag-post">Untag a Post</h4>
 
 - **Authentication:** Required
 - **Required Role:** Collaborator or Administrator

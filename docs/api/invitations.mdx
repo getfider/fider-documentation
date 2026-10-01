@@ -8,9 +8,11 @@ title: Invitations
 - <a href="#send-sample">Send a Sample</a>
 - <a href="#send-invite">Send an Invite</a>
 
+On Fider Cloud, only sites on a Pro plan can customize the invitation email. On other plans, the `subject` and `message` sent are replaced by the default invitation text.
+
 <h4 id="send-sample">Send a Sample</h4>
 
-Sample invitations are example of invitations emails that are sent to current authenticated user's email. Use it to see how the email looks like before sending to other users.
+Sample invitations are examples of invitation emails that are sent to the current authenticated user's email. Use it to see how the email looks before sending it to other users. In the sample, the `%invite%` placeholder is replaced by a note instead of a real invitation link.
 
 - **Authentication:** Required
 - **Required Role:** Collaborator or Administrator
@@ -23,8 +25,8 @@ POST /api/v1/invitations/sample
 
 | Name      | Type     | Description                                                                                                                                            |
 | --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `subject` | `number` | **Required.** The subject of the email to be sent.                                                                                                     |
-| `message` | `string` | **Required.** The content of the email to be sent. The message must include the %invite% placeholder, which will be replaced a secure invitation link. |
+| `subject` | `string` | **Required.** The subject of the email to be sent. Maximum 70 characters.                                                                              |
+| `message` | `string` | **Required.** The content of the email to be sent, in Markdown. The message must include the `%invite%` placeholder, which will be replaced by a secure invitation link. |
 
 **Example**
 
@@ -54,13 +56,15 @@ POST <baseURL>/api/v1/invitations/sample
 POST /api/v1/invitations/send
 ```
 
+Recipients that are already registered on the site are skipped. If all recipients are already registered, the request fails with `400 Bad Request`. The emails are sent in the background.
+
 **Parameters**
 
 | Name         | Type               | Description                                                                                                                                            |
 | ------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `recipients` | `array of strings` | **Required.** The list of email addresses to send an invite.                                                                                           |
-| `subject`    | `string`           | **Required.** The subject of the email to be sent.                                                                                                     |
-| `message`    | `string`           | **Required.** The content of the email to be sent. The message must include the %invite% placeholder, which will be replaced a secure invitation link. |
+| `recipients` | `array of strings` | **Required.** The list of email addresses to send an invite. Maximum 30 recipients.                                                                    |
+| `subject`    | `string`           | **Required.** The subject of the email to be sent. Maximum 70 characters.                                                                              |
+| `message`    | `string`           | **Required.** The content of the email to be sent, in Markdown. The message must include the `%invite%` placeholder, which will be replaced by a secure invitation link. |
 
 **Example**
 

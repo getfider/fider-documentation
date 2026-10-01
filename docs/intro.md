@@ -24,6 +24,8 @@ Did you know you can sign up for an account for free on our hosted fider instanc
 
 :::
 
-The fact that you're here means that you're probably interested in self-hosting Fider in your own infrastructure. Before you go ahead and do this, did you know you can just sign up for Fider on our Fider cloud? It's completely free, with few restrictions (see [pricing](https://fider.io/pricing) for more information).
+The fact that you're here means that you're probably interested in self-hosting Fider in your own infrastructure. Before you go ahead and do this, did you know you can just sign up for Fider on our Fider cloud? There's a free plan with very few restrictions (see [pricing](https://fider.io/pricing) for more information).
 
-Happy to proceed with Self-Hosted? The easiest way to do this is to host the Fider docker container somewhere, but there are other options too depending on what you're trying to host it on. Head over to the [Self-Hosted](/self-hosted) section to see some options.
+Happy to proceed with Self-Hosted? The easiest way to do this is to run the Fider Docker image, as described in [Hosting on Docker](/hosting-instance). There are other options too, depending on where you want to host it. Head over to the [Self-Hosted](/self-hosted) section to see them all.
+
+Once Fider is running, the [Guides](/guides) cover HTTPS, OAuth, webhooks and more, and the [API docs](/api) explain how to integrate Fider with your own tools.

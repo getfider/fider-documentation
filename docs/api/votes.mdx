@@ -7,13 +7,16 @@ title: Votes
 
 - <a href="#add-vote">Vote on a Post</a>
 - <a href="#remove-vote">Remove Vote from a Post</a>
+- <a href="#toggle-vote">Toggle Vote on a Post</a>
 - <a href="#list-post-votes">List Votes of a Post</a>
+
+Votes can't be added or removed on posts with status `completed`, `declined` or `duplicate`. On these posts, requests to add, remove or toggle a vote still succeed, but the votes don't change.
 
 <h4 id="add-vote">Vote on a Post</h4>
 
 - **Authentication:** Required
 
-When casting a vote upon a post, the vote is registered under the current authenticated user. Impersonate another user to vote on behalf of them.
+When casting a vote upon a post, the vote is registered under the current authenticated user. <a href="/api/authentication#impersonation">Impersonate</a> another user to vote on behalf of them. Voting on a post that the user has already voted on has no effect.
 
 ```
 POST /api/v1/posts/{number}/votes
@@ -43,7 +46,7 @@ POST <baseURL>/api/v1/posts/47/votes
 
 - **Authentication:** Required
 
-When removing the vote from a post, the vote is removed from the current authenticated user. Impersonate another user to remove votes on behalf of them.
+When removing the vote from a post, the vote is removed from the current authenticated user. <a href="/api/authentication#impersonation">Impersonate</a> another user to remove votes on behalf of them.
 
 ```
 DELETE /api/v1/posts/{number}/votes
@@ -69,14 +72,49 @@ DELETE <baseURL>/api/v1/posts/47/votes
 {}
 ```
 
-<h4 id="list-post-votes">List Votes of a Post</h4>
+<h4 id="toggle-vote">Toggle Vote on a Post</h4>
 
 - **Authentication:** Required
-- **Required Role:** Collaborator or Administrator
+
+Adds a vote from the current authenticated user if they haven't voted on the post yet, otherwise removes it.
+
+```
+POST /api/v1/posts/{number}/votes/toggle
+```
+
+**Parameters**
+
+| Name     | Type     | Description                                      |
+| -------- | -------- | ------------------------------------------------ |
+| `number` | `number` | **Required.** The number of the post to vote on. |
+
+**Example**
+
+```
+POST <baseURL>/api/v1/posts/47/votes/toggle
+```
+
+**Response**
+
+`voted` is `true` when a vote was added and `false` when it was removed.
+
+```
+200 OK
+---
+{
+  "voted": true
+}
+```
+
+<h4 id="list-post-votes">List Votes of a Post</h4>
+
+- **Authentication:** Optional
 
 ```
 GET /api/v1/posts/{number}/votes
 ```
+
+Votes are returned oldest first. The `email` of each voter is only included when the authenticated user is a Collaborator or Administrator.
 
 **Parameters**
 
@@ -97,20 +135,22 @@ GET <baseURL>/api/v1/posts/47/votes
 ---
 [
   {
-    "createdAt":"2018-11-28T12:18:26.95415Z",
-    "user":{
-      "id":1234,
-      "name":"Jon Snow",
-      "email":"jon.snow@got.com"
-    }
+    "user": {
+      "id": 1234,
+      "name": "Jon Snow",
+      "email": "jon.snow@got.com",
+      "avatarURL": "https://feedback.yourcompany.com/static/avatars/letter/1234/Jon%20Snow"
+    },
+    "createdAt": "2018-11-28T12:18:26.95415Z"
   },
   {
-    "createdAt":"2018-11-28T15:45:45.612288Z",
-    "user":{
-      "id":5678,
-      "name":"Arya Stark",
-      "email":"arya.stark@got.com"
-    }
+    "user": {
+      "id": 5678,
+      "name": "Arya Stark",
+      "email": "arya.stark@got.com",
+      "avatarURL": "https://feedback.yourcompany.com/static/avatars/gravatar/5678/Arya%20Stark"
+    },
+    "createdAt": "2018-11-28T15:45:45.612288Z"
   }
 ]
 ```

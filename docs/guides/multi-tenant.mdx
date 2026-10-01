@@ -16,9 +16,10 @@ Multi-tenancy is a supported, existing feature. It requires specific environment
 Before enabling multi-tenant mode, make sure you have:
 
 - A **domain name you control** (for example `feedback.example.com`).
-- **Wildcard DNS** pointing to your Fider host (for example `*.feedback.example.com`), or individual DNS records for each subdomain you plan to use.
-- A **reverse proxy or load balancer** that forwards requests to Fider while preserving the original `Host` header. Fider resolves tenants from the hostname on each request.
-- A working **email sender** (SMTP, Mailgun, or AWS SES), as tenant signup relies on email verification.
+- **Wildcard DNS** pointing to your Fider host (for example `*.feedback.example.com`), or individual DNS records for `login.feedback.example.com` and each board's subdomain.
+- A **reverse proxy or load balancer** that forwards requests to Fider while preserving the original `Host` header (or sets `X-Forwarded-Host`). Fider resolves tenants from the hostname on each request.
+- **HTTPS certificates** for every subdomain. See [HTTPS](#https) below.
+- A working **email sender** (SMTP, Mailgun, or Amazon SES), as tenant signup relies on email verification.
 
 Platform default hostnames that do not support wildcard subdomains are not suitable for multi-tenant mode. For example, the default hostname provided by Azure App Service (`*.azurewebsites.net`) cannot host arbitrary tenant subdomains such as `acme.my-app.azurewebsites.net`.
 
@@ -46,10 +47,13 @@ services:
       EMAIL_SMTP_PORT: 587
 ```
 
+All other settings work the same as in single-tenant mode. See the [configuration reference](/hosting-instance#configuration-reference).
+
 Important notes:
 
 - `HOST_DOMAIN` is the domain name **only**. Do not include `https://` or a trailing slash. Use `feedback.example.com`, not `https://feedback.example.com/`.
-- Do **not** set `BASE_URL` in multi-tenant mode. In single-tenant mode, `BASE_URL` is required and `HOST_DOMAIN` must not be set. Fider will refuse to start if both are configured incorrectly.
+- `BASE_URL` is ignored in multi-tenant mode, so leave it out. Fider builds links from the hostname and scheme of each request instead. Your proxy must send `X-Forwarded-Proto: https`, or links in emails will use `http://`.
+- In single-tenant mode, `BASE_URL` is required and `HOST_DOMAIN` must not be set. Fider refuses to start if `HOST_DOMAIN` is set without `HOST_MODE: multi`.
 - Restart Fider after changing these variables.
 
 You only need **one** Fider application connected to the database. Running multiple Fider containers against the same database without multi-tenant mode enabled will not create separate tenants; both instances will show the same data.
@@ -69,7 +73,7 @@ For `HOST_DOMAIN=feedback.example.com`:
 - Signup: `https://login.feedback.example.com/signup`
 - A tenant named `acme`: `https://acme.feedback.example.com/`
 
-Visiting a subdomain that does not match any tenant returns a **Page not found** response. This is expected. The root domain (`feedback.example.com`) is not a tenant URL unless you configure it explicitly.
+Visiting `/signup` on any other hostname redirects to the `login` subdomain. Visiting a subdomain that does not match any tenant returns a **Page not found** response. This is expected. The root domain (`feedback.example.com`) is not a tenant URL.
 
 The `login` subdomain is reserved for tenant signup and OAuth flows. It is not a regular feedback board.
 
@@ -80,7 +84,9 @@ The supported way to create a new tenant is through the signup page:
 1. Open `https://login.{HOST_DOMAIN}/signup`.
 2. Sign in with OAuth or enter your name and email address.
 3. Choose a name and subdomain for the new board. Fider checks subdomain availability as you type.
-4. If you signed up with email, confirm your address using the verification link sent to your inbox. The board remains in a pending state until verification is complete.
+4. If you signed up with email, confirm your address using the verification link sent to your inbox. The board remains in a pending state until verification is complete. The link is valid for 48 hours.
+
+Only the OAuth providers set with environment variables (`OAUTH_GOOGLE_*`, `OAUTH_GITHUB_*` and `OAUTH_FACEBOOK_*`) are offered on the signup page.
 
 Subdomain rules:
 
@@ -89,6 +95,16 @@ Subdomain rules:
 - Certain names are reserved and cannot be used, including `login`, `signup`, `admin`, `api`, `www`, and others.
 
 Manual database changes to create tenants are not documented here and are not the supported workflow.
+
+### OAuth
+
+In multi-tenant mode, every board uses the `login` subdomain for OAuth callbacks. When you register an OAuth application with a provider, use this callback URL:
+
+```
+https://login.{HOST_DOMAIN}/oauth/{provider}/callback
+```
+
+This applies both to the providers set with environment variables and to custom providers that a board configures in its admin area. See [Configuring OAuth](/configuring-oauth).
 
 ### Custom domains
 
@@ -102,19 +118,46 @@ To set up a custom domain:
    - For apex domains (for example `yourcompany.com`): an **ALIAS** or equivalent record, depending on your DNS provider.
 3. Allow time for DNS propagation (up to 72 hours in some cases).
 
+The custom domain can't be a subdomain of `HOST_DOMAIN`. The board is still reachable on its subdomain after you set a custom domain.
+
 Custom domain settings are only available in multi-tenant mode.
+
+### HTTPS
+
+Every board needs a valid certificate, and so does the `login` subdomain. A wildcard certificate for `*.{HOST_DOMAIN}` covers all of them. Let's Encrypt only issues wildcard certificates through a DNS challenge, which reverse proxies such as Caddy and Traefik support with a plugin for your DNS provider.
+
+If you [use a reverse proxy](/how-to-enable-ssl#1-https-with-a-reverse-proxy), it also needs a certificate for each custom domain.
+
+If Fider handles HTTPS itself, you can combine both of its built-in options:
+
+- `SSL_CERT` and `SSL_CERT_KEY` with a wildcard certificate for `*.{HOST_DOMAIN}`.
+- `SSL_AUTO: "true"` to get certificates for custom domains from Let's Encrypt.
+
+Fider uses your certificate for every hostname it covers, and Let's Encrypt for the rest. It only requests a Let's Encrypt certificate for a custom domain whose DNS has a **CNAME** record pointing to `{subdomain}.{HOST_DOMAIN}`, so apex domains using an ALIAS record won't get one. With `SSL_AUTO` alone, the `login` subdomain doesn't get a certificate either, so the signup page won't load over HTTPS.
+
+See [How to enable TLS/SSL](/how-to-enable-ssl) for details of each option.
 
 ### Restricting new tenant signups
 
 By default, anyone who can reach `https://login.{HOST_DOMAIN}/signup` can create a new feedback board. To disable tenant signup:
 
-```
-SIGNUP_DISABLED=true
+```yaml
+SIGNUP_DISABLED: "true"
 ```
 
-When signup is disabled, the signup page and tenant creation API return **404 Not Found**.
+When signup is disabled, the signup page and tenant creation API return **404 Not Found**. Existing boards are not affected, and people can still sign in to them.
 
-For additional control, you can restrict access at your reverse proxy or web server (for example by blocking the `login` subdomain or the `/signup` path). The exact configuration depends on your infrastructure.
+For additional control, you can restrict access at your reverse proxy or web server (for example by blocking the `/signup` path). If you block the whole `login` subdomain, OAuth sign-in stops working too, because it uses the same subdomain.
+
+### Pro features
+
+In single-tenant mode, every feature is available. In multi-tenant mode, Fider follows the same plans as Fider Cloud: the **Roadmap** page and **Content Moderation** are only available to boards on the Pro plan, and new boards start on the free plan.
+
+Self-hosted installations have no billing, so there's no way to upgrade a board from the admin area. To enable these features for a board, set its `is_pro` flag in the database:
+
+```sql
+UPDATE tenants SET is_pro = true WHERE subdomain = 'acme';
+```
 
 ### Single-tenant vs multi-tenant
 
@@ -124,9 +167,10 @@ For additional control, you can restrict access at your reverse proxy or web ser
 | Number of boards | One | Many |
 | First-time setup | `/signup` on `BASE_URL` | `https://login.{HOST_DOMAIN}/signup` |
 | Tenant resolution | First tenant in the database | Hostname (subdomain or custom domain) |
+| Links in emails | Built from `BASE_URL` | Built from the hostname and scheme of the request |
 | Custom domain UI | Not shown | Available in site settings |
 | Site deletion (Danger Zone) | Not available | Available to the account owner |
-| Roadmap and moderation | Available on self-hosted installs | In multi-tenant mode, these features follow the tenant's plan flags (same as Fider Cloud) |
+| Roadmap and moderation | Always available | Only for boards with `is_pro` set (see [Pro features](#pro-features)) |
 
 ### Common mistakes
 
@@ -134,11 +178,12 @@ For additional control, you can restrict access at your reverse proxy or web ser
 
 **Including a URL scheme in `HOST_DOMAIN`.** Use `feedback.example.com`, not `https://feedback.example.com`.
 
+**Not sending `X-Forwarded-Proto` from the proxy.** Without it, Fider treats requests as plain HTTP and builds `http://` links, including in sign-in emails.
+
 **Editing `tenants.subdomain` in the database without DNS.** Changing a subdomain in PostgreSQL does not create DNS records. The new subdomain must resolve to your Fider host.
 
 **Expecting `login.*` to work in single-tenant mode.** The `login` subdomain and signup redirect only apply when `HOST_MODE=multi`.
 
 **Using a platform hostname without wildcard subdomain support.** If your hosting provider assigns a fixed hostname (for example a default cloud app URL), you typically cannot add arbitrary tenant subdomains under it. Use a custom domain with wildcard DNS instead.
-
 
 For the default single-board installation, see [Hosting on Docker](/hosting-instance).

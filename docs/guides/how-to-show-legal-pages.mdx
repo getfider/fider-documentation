@@ -1,18 +1,42 @@
 ---
-sidebar_postition: 3
+sidebar_position: 3
 title: How to Show Legal Pages
 slug: /how-to-show-legal-pages
-description: How to Show Legal Pages
+description: How to show a Privacy Policy and Terms of Service on your Fider site
 ---
 
-Starting from Fider 0.13, it is now possible host custom Privacy Policy and Terms of Service that will be displayed to all users during the registration and sign in process.
+You can host your own Privacy Policy and Terms of Service on your Fider site. Once they're set up, Fider shows them at `/privacy` and `/terms`, and links to them from the sign-in and sign-up screens.
 
 ### Prerequisites
 
-You will need both documents written in a markdown format, they **need** to be named `terms.md` and `privacy.md`.
+You need both documents written in Markdown. They **must** be named `privacy.md` and `terms.md`.
 
 ### How to
 
-Fider's Docker image expects both file to be available on `/app/etc`. You can copy these files anywhere you want on your server and share them with your Docker container by using [volumes](https://docs.docker.com/storage/volumes/).
+Fider reads both files from `/app/etc` inside the container. Put them in a folder on your server and mount it as a volume.
 
-For example, if your files are inside `/home/me/fider`, you can map it to the container with `-v /home/me/fider:/app/etc`.
+For example, if you followed [Hosting on Docker](/hosting-instance), copy the files to `/var/fider/etc` and add a volume to the `app` service in your `docker-compose.yml`:
+
+```yaml
+  app:
+    volumes:
+      - /var/fider/etc:/app/etc
+```
+
+Then restart Fider with `docker compose up -d`.
+
+If you use `docker run`, add `-v /var/fider/etc:/app/etc` instead.
+
+### What users see
+
+When both files are present:
+
+- The sign-in page and sign-in dialog show "By signing in, you agree to the Privacy Policy and Terms of Service", with links to both pages.
+- When someone creates a new site on the sign-up page, they must tick a box agreeing to both documents before continuing.
+- `/privacy` and `/terms` show the documents. They are visible to everyone, even on a private site.
+
+Things to know:
+
+- **Both files are required.** If only one of them exists, Fider doesn't show any links or the agreement box.
+- **Restart after adding or removing the files.** Fider checks whether the files exist once, when it first needs to. Changes to the content of an existing file show up immediately.
+- In [multi-tenant](/multi-tenant) mode, the same documents apply to every board.

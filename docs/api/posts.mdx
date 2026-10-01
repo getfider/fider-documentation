@@ -6,13 +6,19 @@ title: Posts
 <h3 id="posts">Posts</h3>
 
 - <a href="#list-posts">List Posts</a>
+- <a href="#find-similar-posts">Find Similar Posts</a>
 - <a href="#get-post">Get a Post</a>
 - <a href="#create-post">Create a Post</a>
 - <a href="#edit-post">Edit a Post</a>
 - <a href="#delete-post">Delete a Post</a>
 - <a href="#respond-post">Respond to a Post</a>
+- <a href="#subscribe-post">Subscribe to a Post</a>
+- <a href="#unsubscribe-post">Unsubscribe from a Post</a>
+- <a href="#moderate-post">Moderate a Post</a>
 
-A **Post** is new topic created by a user on the Feedback Site, while it's usually a suggestion or feature request, sometimes it might also be a bug report or a complain.
+A **Post** is new topic created by a user on the Feedback Site, while it's usually a suggestion or feature request, sometimes it might also be a bug report or a complaint.
+
+Posts that are waiting for moderation are only returned to Collaborators, Administrators and the user who created them.
 
 <h4 id="list-posts">List Posts</h4>
 
@@ -24,17 +30,34 @@ GET /api/v1/posts
 
 **Parameters**
 
-| Name    | Type      | Description                                                                                                                                                                                   |
-| ------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `query` | `string`  | The search keywords                                                                                                                                                                           |
-| `view`  | `string`  | The filter and order to apply. Possible values are `all`, `recent`, `my-votes`, `most-wanted`, `most-discussed`, `planned`, `started`, `completed`, `declined` and `trending`. Default: `all` |
-| `limit` | `integer` | The number of entries to return. Default: 30                                                                                                                                                  |
-| `tags`  | `string`  | The list of tags to filter by. Separate multiple tags by ,                                                                                                                                    |
+| Name         | Type      | Description                                                                                                                                                                                                             |
+| ------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `query`      | `string`  | The search keywords. When present, results are ordered by relevance.                                                                                                                                                    |
+| `view`       | `string`  | The order to apply. Possible values are `all`, `recent`, `trending`, `most-wanted` and `most-discussed`. Default: `all`. See **Views** below.                                                                            |
+| `statuses`   | `string`  | The statuses to filter by. Separate multiple statuses by `,`. Possible values are `open`, `started`, `planned`, `completed`, `declined` and `duplicate`. Default: `open,started,planned`. Ignored when `view` is `all`. |
+| `tags`       | `string`  | The slugs of the tags to filter by. Separate multiple tags by `,`. Posts that have any of the given tags are returned.                                                                                                  |
+| `notags`     | `boolean` | When `true`, only posts without tags are returned. Takes precedence over `tags`.                                                                                                                                        |
+| `myvotes`    | `boolean` | When `true`, only posts the authenticated user has voted on are returned.                                                                                                                                               |
+| `myposts`    | `boolean` | When `true`, only posts created by the authenticated user are returned.                                                                                                                                                 |
+| `moderation` | `string`  | Only for Collaborators and Administrators. `pending` returns only posts waiting for moderation, `approved` returns only approved posts.                                                                                  |
+| `limit`      | `string`  | The number of entries to return, or `all` to return every matching post. Default: 30                                                                                                                                    |
+
+**Views**
+
+| View             | Order                                               | Statuses                                                                               |
+| ---------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `all`            | Newest first                                        | Always `open`, `started`, `planned`, `completed` and `declined`. `statuses` is ignored. |
+| `recent`         | Newest first                                        | From `statuses`                                                                        |
+| `trending`       | Posts with the most recent votes and comments first | From `statuses`                                                                        |
+| `most-wanted`    | Most votes first                                    | From `statuses`                                                                        |
+| `most-discussed` | Most comments first                                 | From `statuses`                                                                        |
+
+The views `my-votes`, `planned`, `started`, `completed` and `declined` are deprecated but still supported. Use the `myvotes` and `statuses` parameters instead.
 
 **Example**
 
 ```
-GET <baseURL>/api/v1/posts?view=completed&query=open+links&limit=50
+GET <baseURL>/api/v1/posts?view=recent&statuses=completed&query=open+links&limit=50
 ```
 
 **Response**
@@ -53,7 +76,10 @@ GET <baseURL>/api/v1/posts?view=completed&query=open+links&limit=50
     "user": {
       "id": 45642,
       "name": "Jon Snow",
-      "role": "visitor"
+      "role": "visitor",
+      "avatarURL": "https://feedback.yourcompany.com/static/avatars/letter/45642/Jon%20Snow",
+      "status": "active",
+      "isTrusted": false
     },
     "hasVoted": true,
     "votesCount": 34,
@@ -65,13 +91,60 @@ GET <baseURL>/api/v1/posts?view=completed&query=open+links&limit=50
       "user": {
         "id": 8,
         "name": "Arya Stark",
-        "role": "administrator"
+        "role": "administrator",
+        "avatarURL": "https://feedback.yourcompany.com/static/avatars/gravatar/8/Arya%20Stark",
+        "status": "active",
+        "isTrusted": false
       },
       "original": null
     },
-    "tags": ["hard","critical"]
+    "tags": ["hard", "critical"],
+    "isApproved": true
   },
   {
+    ...
+  }
+]
+```
+
+The `response` property is only present on posts that have received a response. When the post is a duplicate, `response.original` contains the `number`, `title`, `slug` and `status` of the original post.
+
+Private tags are only included in `tags` for Collaborators and Administrators.
+
+<h4 id="find-similar-posts">Find Similar Posts</h4>
+
+- **Authentication:** Optional
+
+Returns up to 5 posts that match the given keywords, ordered by relevance. This is useful to find existing posts before creating a new one. Only posts with status `open`, `started`, `planned`, `completed` or `declined` are returned.
+
+```
+GET /api/v1/similarposts
+```
+
+**Parameters**
+
+| Name    | Type     | Description          |
+| ------- | -------- | -------------------- |
+| `query` | `string` | The search keywords. |
+
+**Example**
+
+```
+GET <baseURL>/api/v1/similarposts?query=open+links
+```
+
+**Response**
+
+A list of posts, in the same format as <a href="#list-posts">List Posts</a>. An empty list is returned if the query only contains common words or words shorter than 3 characters.
+
+```
+200 OK
+---
+[
+  {
+    "id": 4315,
+    "number": 65,
+    "title": "Open links in new tab",
     ...
   }
 ]
@@ -112,7 +185,10 @@ GET <baseURL>/api/v1/posts/65
   "user": {
     "id": 45642,
     "name": "Jon Snow",
-    "role": "visitor"
+    "role": "visitor",
+    "avatarURL": "https://feedback.yourcompany.com/static/avatars/letter/45642/Jon%20Snow",
+    "status": "active",
+    "isTrusted": false
   },
   "hasVoted": true,
   "votesCount": 34,
@@ -124,17 +200,25 @@ GET <baseURL>/api/v1/posts/65
     "user": {
       "id": 8,
       "name": "Arya Stark",
-      "role": "administrator"
+      "role": "administrator",
+      "avatarURL": "https://feedback.yourcompany.com/static/avatars/gravatar/8/Arya%20Stark",
+      "status": "active",
+      "isTrusted": false
     },
     "original": null
   },
-  "tags": ["hard","critical"]
+  "tags": ["hard", "critical"],
+  "isApproved": true
 }
 ```
+
+Deleted posts return `404 Not Found`.
 
 <h4 id="create-post">Create a Post</h4>
 
 - **Authentication:** Required
+
+The post is created under the authenticated user, who also automatically votes on it.
 
 ```
 POST /api/v1/posts
@@ -142,10 +226,12 @@ POST /api/v1/posts
 
 **Parameters**
 
-| Name          | Type     | Description                          |
-| ------------- | -------- | ------------------------------------ |
-| `title`       | `string` | **Required.** The title of the post. |
-| `description` | `string` | The description of the post.         |
+| Name          | Type              | Description                                                                                                                                                                     |
+| ------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`       | `string`          | **Required.** The title of the post. Must be between 10 and 100 characters, and no other post can have the same title.                                                           |
+| `description` | `string`          | The description of the post, in Markdown.                                                                                                                                       |
+| `tags`        | `array of string` | The slugs of the tags to add to the post. Only used on self-hosted instances with `POST_CREATION_WITH_TAGS_ENABLED=true`, otherwise ignored. Visitors can only use public tags. |
+| `attachments` | `array of object` | Up to 3 images to attach to the post. See <a href="#attachments">Attachments</a>.                                                                                               |
 
 **Example**
 
@@ -167,31 +253,53 @@ POST <baseURL>/api/v1/posts
   "id": 6848,
   "number": 47,
   "title": "Allow users to edit any comment",
-  "slug": "allow-users-to-edit-any-comment"
+  "slug": "allow-users-to-edit-any-comment",
+  "isApproved": true
 }
 ```
+
+`isApproved` is `false` when moderation is enabled and the post is waiting to be approved.
+
+<h5 id="attachments">Attachments</h5>
+
+Images are sent inside the JSON body, with the file content encoded as Base64. Supported formats are PNG, JPEG and GIF, and each image must be 5 MB or smaller. Attached images that are not referenced in the description are added to the end of it.
+
+```
+{
+  "upload": {
+    "fileName": "screenshot.png",
+    "contentType": "image/png",
+    "content": "iVBORw0KGgoAAAANSUhEUgAA..."
+  }
+}
+```
+
+When editing a post or comment, send `{ "bkey": "{blob-key}", "remove": true }` to remove an existing attachment.
 
 <h4 id="edit-post">Edit a Post</h4>
 
 - **Authentication:** Required
-- **Required Role:** Collaborator or Administrator
+- **Required Role:** Collaborator or Administrator. The author of the post can also edit it during the first hour after it was created.
 
 ```
 PUT /api/v1/posts/{number}
 ```
 
+The title and description are replaced by the values sent. If `description` is not sent, the description of the post is cleared.
+
 **Parameters**
 
-| Name          | Type     | Description                                        |
-| ------------- | -------- | -------------------------------------------------- |
-| `number`      | `number` | **Required.** The number of the post to be edited. |
-| `title`       | `string` | **Required.** The title of the post.               |
-| `description` | `string` | The description of the post.                       |
+| Name          | Type              | Description                                                                                                             |
+| ------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `number`      | `number`          | **Required.** The number of the post to be edited.                                                                      |
+| `title`       | `string`          | **Required.** The title of the post. Must be between 10 and 100 characters, and no other post can have the same title. |
+| `description` | `string`          | The description of the post, in Markdown.                                                                               |
+| `attachments` | `array of object` | Images to add or remove. A post can have up to 3 images. See <a href="#attachments">Attachments</a>.                    |
 
 **Example**
 
 ```
-POST <baseURL>/api/v1/posts/47
+PUT <baseURL>/api/v1/posts/47
 ---
 {
   "title": "Allow users to edit their own comments",
@@ -215,6 +323,8 @@ POST <baseURL>/api/v1/posts/47
 ```
 DELETE /api/v1/posts/{number}
 ```
+
+A post cannot be deleted while other posts are marked as a duplicate of it.
 
 **Parameters**
 
@@ -252,12 +362,12 @@ PUT /api/v1/posts/{number}/status
 
 **Parameters**
 
-| Name             | Type     | Description                                                                                                                        |
-| ---------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `number`         | `number` | **Required.** The number of the post to add a response.                                                                            |
-| `status`         | `string` | **Required.**The new status of the post. Possible values are `open`, `planned`, `started`, `completed`, `declined` and `duplicate` |
-| `text`           | `string` | An optional description of what is the status on this post. This is made visible to all visitors on the website.                   |
-| `originalNumber` | `number` | The number of the post to merge this into. This parameter **Required** when status is duplicate.                                   |
+| Name             | Type     | Description                                                                                                                                          |
+| ---------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `number`         | `number` | **Required.** The number of the post to add a response.                                                                                              |
+| `status`         | `string` | **Required.** The new status of the post. Possible values are `open`, `started`, `planned`, `completed`, `declined` and `duplicate`.                 |
+| `text`           | `string` | An optional description of what is the status on this post. This is made visible to all visitors on the website. Ignored when status is `duplicate`. |
+| `originalNumber` | `number` | The number of the post to merge this into. **Required** when status is `duplicate`. The votes of this post are added to the original post.           |
 
 **Example #1**
 
@@ -279,6 +389,109 @@ PUT <baseURL>/api/v1/posts/47/status
   "status": "duplicate",
   "originalNumber": 84
 }
+```
+
+**Response**
+
+```
+200 OK
+---
+{}
+```
+
+<h4 id="subscribe-post">Subscribe to a Post</h4>
+
+- **Authentication:** Required
+
+Subscribes the authenticated user to notifications about the post. Impersonate another user to subscribe on behalf of them.
+
+```
+POST /api/v1/posts/{number}/subscription
+```
+
+**Parameters**
+
+| Name     | Type     | Description                                           |
+| -------- | -------- | ----------------------------------------------------- |
+| `number` | `number` | **Required.** The number of the post to subscribe to. |
+
+**Example**
+
+```
+POST <baseURL>/api/v1/posts/47/subscription
+```
+
+**Response**
+
+```
+200 OK
+---
+{}
+```
+
+<h4 id="unsubscribe-post">Unsubscribe from a Post</h4>
+
+- **Authentication:** Required
+
+Stops notifications about the post for the authenticated user. Impersonate another user to unsubscribe on behalf of them.
+
+```
+DELETE /api/v1/posts/{number}/subscription
+```
+
+**Parameters**
+
+| Name     | Type     | Description                                               |
+| -------- | -------- | --------------------------------------------------------- |
+| `number` | `number` | **Required.** The number of the post to unsubscribe from. |
+
+**Example**
+
+```
+DELETE <baseURL>/api/v1/posts/47/subscription
+```
+
+**Response**
+
+```
+200 OK
+---
+{}
+```
+
+<h4 id="moderate-post">Moderate a Post</h4>
+
+- **Authentication:** Required
+- **Required Role:** Administrator
+
+Approves or declines a post that is waiting for moderation. Moderation is available on self-hosted instances and on Fider Cloud Pro plans. On other plans these endpoints return `403 Forbidden`.
+
+Use <a href="#list-posts">List Posts</a> with `moderation=pending` to find the posts that are waiting for moderation.
+
+```
+POST /api/v1/admin/moderation/posts/{id}/approve
+POST /api/v1/admin/moderation/posts/{id}/approve-and-verify
+POST /api/v1/admin/moderation/posts/{id}/decline
+POST /api/v1/admin/moderation/posts/{id}/decline-and-block
+```
+
+| Action               | Description                                                                                  |
+| -------------------- | -------------------------------------------------------------------------------------------- |
+| `approve`            | Approves the post, making it visible to everyone.                                            |
+| `approve-and-verify` | Approves the post and marks its author as trusted, so their future content skips moderation. |
+| `decline`            | Deletes the post.                                                                            |
+| `decline-and-block`  | Deletes the post and blocks its author.                                                      |
+
+**Parameters**
+
+| Name | Type     | Description                                                            |
+| ---- | -------- | ---------------------------------------------------------------------- |
+| `id` | `number` | **Required.** The `id` of the post (not the `number`) to be moderated. |
+
+**Example**
+
+```
+POST <baseURL>/api/v1/admin/moderation/posts/6848/approve
 ```
 
 **Response**
