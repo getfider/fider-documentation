@@ -218,6 +218,10 @@ The correct configuration would be (note the external quotes have been removed t
 }
 ```
 
+The `markdown` function HTML-escapes its output: `&`, `<` and `>` become `&amp;`, `&lt;` and `&gt;`. This is safe for Slack and HTML destinations,
+but Discord and Teams show these entities as they are. HTML escaping is not JSON escaping (backslashes and newlines), so in JSON you still need `quote`:
+`{{ quote (markdown .post_description) }}`.
+
 #### List of properties and functions
 
 You can also find this information in the integrated help by clicking on the information icon next to the **URL** and **Content** fields.
@@ -287,18 +291,18 @@ Additional properties by type:
 
 ##### Functions
 
-| Function    | Description                                                                                                     | Parameters<br /><small>Type - Description</small>                                          |
-| ----------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `stripHtml` | Strip HTML tags from the input data                                                                             | `string` - The input string containing HTML to strip                                       |
-| `md5`       | Hash text using [MD5](https://en.wikipedia.org/wiki/MD5) algorithm                                              | `string` - The input string to hash                                                        |
-| `lower`     | Lowercase text                                                                                                  | `string` - The input string to lowercase                                                   |
-| `upper`     | Uppercase text                                                                                                  | `string` - The input string to uppercase                                                   |
-| `markdown`  | Convert [Markdown](https://en.wikipedia.org/wiki/Markdown) to plain text (formatting and HTML tags are removed) | `string` - The input string containing Markdown                                            |
-| `format`    | [Format][go-time-format] the given date and time                                                                | `string` - The date format according to Go specifications<hr />`time` - The time to format |
-| `quote`     | Enquote a string and escape inner special characters                                                            | `string` - The input string to quote                                                       |
-| `escape`    | Escape inner special characters of a string, without enquoting it                                               | `string` - The input string to escape                                                      |
-| `urlquery`  | Encode a string into a valid URL query element                                                                  | `string` - The input string to encode as URL query value                                   |
-| `truncate`  | Truncate a string to the given length, ending it with `...` when it was longer                                  | `string` - The input string to truncate<hr />`number` - Maximum length of the output       |
+| Function    | Description                                                                                                                                                                 | Parameters<br /><small>Type - Description</small>                                          |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `stripHtml` | Strip HTML tags from the input data                                                                                                                                         | `string` - The input string containing HTML to strip                                       |
+| `md5`       | Hash text using [MD5](https://en.wikipedia.org/wiki/MD5) algorithm                                                                                                          | `string` - The input string to hash                                                        |
+| `lower`     | Lowercase text                                                                                                                                                              | `string` - The input string to lowercase                                                   |
+| `upper`     | Uppercase text                                                                                                                                                              | `string` - The input string to uppercase                                                   |
+| `markdown`  | Convert [Markdown](https://en.wikipedia.org/wiki/Markdown) to plain text: formatting is removed and the output is HTML-escaped (`&`, `<`, `>`, `"` and `'` become entities) | `string` - The input string containing Markdown                                            |
+| `format`    | [Format][go-time-format] the given date and time                                                                                                                            | `string` - The date format according to Go specifications<hr />`time` - The time to format |
+| `quote`     | Enquote a string and escape inner special characters                                                                                                                        | `string` - The input string to quote                                                       |
+| `escape`    | Escape inner special characters of a string, without enquoting it                                                                                                           | `string` - The input string to escape                                                      |
+| `urlquery`  | Encode a string into a valid URL query element                                                                                                                              | `string` - The input string to encode as URL query value                                   |
+| `truncate`  | Truncate a string to the given length, ending it with `...` when it was longer                                                                                              | `string` - The input string to truncate<hr />`number` - Maximum length of the output       |
 
 The [built-in Go template functions](https://pkg.go.dev/text/template#hdr-Functions), such as `len`, `printf`, `eq` or `index`, are also available.
 
