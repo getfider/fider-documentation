@@ -94,6 +94,8 @@ The Docker Compose file above defines two services: `db` and `app`. If you're us
 
 For multiple feedback boards on one deployment, see [Multi-Tenant Hosting](/multi-tenant).
 
+The `stable` image tag always points to the latest published release, so pulling it picks up new versions (including security fixes) as soon as they are released. To control when you upgrade, pin a specific version instead, for example `getfider/fider:v0.39.0`. The `main` tag tracks unreleased development builds and is not recommended for production.
+
 ##### Step 2: Pull the images and run them
 
 Open your favorite terminal, navigate to `/var/fider` and run
