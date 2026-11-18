@@ -15,6 +15,8 @@ title: Comments
 
 Comments that are waiting for moderation are only returned to Collaborators, Administrators and the user who created them.
 
+A comment can be a reply to another comment. Replies have `parentId` set to the id of the comment they reply to, which is always a top-level comment: replies are one level deep.
+
 <h4 id="list-comments">List Comments</h4>
 
 - **Authentication:** Optional
@@ -45,6 +47,7 @@ GET <baseURL>/api/v1/posts/47/comments
 [
   {
     "id": 68,
+    "parentId": 67,
     "content": "Definitely. Just do it!",
     "createdAt": "2017-07-26T06:49:03.951383Z",
     "user": {
@@ -91,7 +94,7 @@ GET <baseURL>/api/v1/posts/47/comments
 ]
 ```
 
-`editedAt` and `editedBy` are only present on comments that have been edited. `attachments` (the keys of the attached images) and `reactionCounts` are only present when the comment has any.
+`parentId` is only present on replies. `editedAt` and `editedBy` are only present on comments that have been edited. `attachments` (the keys of the attached images) and `reactionCounts` are only present when the comment has any.
 
 <h4 id="get-comment">Get a Comment</h4>
 
@@ -116,7 +119,7 @@ GET <baseURL>/api/v1/posts/47/comments/68
 
 **Response**
 
-This endpoint doesn't return `attachments` or `reactionCounts`.
+This endpoint doesn't return `attachments` or `reactionCounts`. As in the list, `parentId` is only present on replies.
 
 ```
 200 OK
@@ -161,6 +164,7 @@ POST /api/v1/posts/{number}/comments
 | `number`      | `number`          | **Required.** The number of the post to add the comment.                                                      |
 | `content`     | `string`          | **Required.** The content of the comment, in Markdown. Maximum 4000 characters.                               |
 | `attachments` | `array of object` | Up to 2 images to attach to the comment. See <a href="/api/posts#attachments">Attachments</a>.                          |
+| `parentId`    | `number`          | Makes the comment a reply. The id of an approved, top-level comment on the same post.                         |
 
 **Example**
 
@@ -171,6 +175,19 @@ POST <baseURL>/api/v1/posts/47/comments
   "content": "Agreed, we'll soon need to act on this"
 }
 ```
+
+To reply to comment 5674 instead:
+
+```
+POST <baseURL>/api/v1/posts/47/comments
+---
+{
+  "content": "Agreed, we'll soon need to act on this",
+  "parentId": 5674
+}
+```
+
+A `parentId` that is a reply itself, waiting for moderation, deleted or on another post is rejected with `400 Bad Request` and an error on the `parentId` field.
 
 **Response**
 
