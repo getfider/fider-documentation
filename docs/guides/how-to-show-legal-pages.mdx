@@ -5,15 +5,29 @@ slug: /how-to-show-legal-pages
 description: How to show a Privacy Policy and Terms of Service on your Fider site
 ---
 
-You can host your own Privacy Policy and Terms of Service on your Fider site. Once they're set up, Fider shows them at `/privacy` and `/terms`, and links to them from the sign-in and sign-up screens.
+You can show a Privacy Policy and Terms of Service on your Fider site. Once they're set up, Fider links to them from the sign-in and sign-up screens, at `/privacy` and `/terms`.
 
-### Prerequisites
+There are two ways to provide each document:
 
-You need both documents written in Markdown. They **must** be named `privacy.md` and `terms.md`.
+- [Link to a page you already host](#link-to-existing-pages), for example on your company website.
+- [Upload a Markdown file](#upload-markdown-files) that Fider shows itself.
 
-### How to
+### Link to existing pages
 
-Fider reads both files from `/app/etc` inside the container. Put them in a folder on your server and mount it as a volume.
+Set these environment variables to the full URLs of your pages:
+
+| Variable | Description |
+| --- | --- |
+| `LEGAL_PRIVACY_URL` | URL of your Privacy Policy, e.g. `https://example.com/privacy` |
+| `LEGAL_TERMS_URL` | URL of your Terms of Service, e.g. `https://example.com/terms` |
+
+Then restart Fider. The links on the sign-in and sign-up screens go to `/privacy` and `/terms`, which redirect to your URLs.
+
+### Upload Markdown files
+
+You need the documents written in Markdown. They **must** be named `privacy.md` and `terms.md`.
+
+Fider reads the files from `/app/etc` inside the container. Put them in a folder on your server and mount it as a volume.
 
 For example, if you followed [Hosting on Docker](/hosting-instance), copy the files to `/var/fider/etc` and add a volume to the `app` service in your `docker-compose.yml`:
 
@@ -29,14 +43,15 @@ If you use `docker run`, add `-v /var/fider/etc:/app/etc` instead.
 
 ### What users see
 
-When both files are present:
+When both documents are set up:
 
 - The sign-in page and sign-in dialog show "By signing in, you agree to the Privacy Policy and Terms of Service", with links to both pages.
 - When someone creates a new site on the sign-up page, they must tick a box agreeing to both documents before continuing.
-- `/privacy` and `/terms` show the documents. They are visible to everyone, even on a private site.
+- `/privacy` and `/terms` show the documents, or redirect to your URLs. They are visible to everyone, even on a private site.
 
 Things to know:
 
-- **Both files are required.** If only one of them exists, Fider doesn't show any links or the agreement box.
-- **Restart after adding or removing the files.** Fider checks whether the files exist once, when it first needs to. Changes to the content of an existing file show up immediately.
+- **Both documents are required.** Each one can be a URL or a file, and you can mix them. If only one document is set up, Fider doesn't show any links or the agreement box.
+- **A URL takes precedence over a file.** If `LEGAL_PRIVACY_URL` is set, Fider ignores `privacy.md`. The same goes for `LEGAL_TERMS_URL` and `terms.md`.
+- **Restart after adding or removing the files or variables.** Fider checks whether the files exist once, when it first needs to. Changes to the content of an existing file show up immediately.
 - In [multi-tenant](/multi-tenant) mode, the same documents apply to every board.
