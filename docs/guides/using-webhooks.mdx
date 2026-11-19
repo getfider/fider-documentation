@@ -285,7 +285,7 @@ When a post is marked as `duplicate`, these properties describe the original pos
 
 Additional properties by type:
 
-- **New Comment**: `comment` is the text of the new comment, in Markdown, and `comment_id` is its ID. `author_*` is the author of the comment.
+- **New Comment**: `comment` is the text of the new comment, in Markdown, and `comment_id` is its ID. When the comment is a reply, `comment_parent_id` is the ID of the comment it replies to; it's absent otherwise. `author_*` is the author of the comment.
 - **Change Status**: `post_old_status` is the status before the change, and `post_status` is the new status. `author_*` is the user who changed it.
 - **Delete Post**: `post_status` is `deleted` and `post_response_text` contains the reason given for the deletion, if any. `author_*` is the user who deleted it.
 
