@@ -304,7 +304,7 @@ POST <baseURL>/api/v1/posts/47/comments/5675/reactions/%F0%9F%91%8D
 <h4 id="moderate-comment">Moderate a Comment</h4>
 
 - **Authentication:** Required
-- **Required Role:** Administrator
+- **Required Role:** Collaborator or Administrator for `approve` and `decline`. Administrator for `approve-and-verify` and `decline-and-block`, which change the author's status.
 
 Approves or declines a comment that is waiting for moderation. Moderation is available on self-hosted instances and on Fider Cloud Pro plans. On other plans these endpoints return `403 Forbidden`.
 
